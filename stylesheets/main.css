@@ -25,18 +25,21 @@ form button {
     font-size: 1rem;
 }
 
-button#face {
+button#face,
+button#settings {
     aspect-ratio: 1;
-    font-size: 5rem;
+    font-size: 4rem;
     line-height: 0;
     border: 0;
     background: none;
+    max-width: 25%;
 }
 
-a#settings {
-    font-size: 5rem;
-    line-height: 1;
-    text-decoration: none;
+#info {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    max-width: 50%;
 }
 
 #flags,

@@ -20,7 +20,8 @@ const format = timeInSeconds => {
 
 /*
 TODO
-- [ ] add service worker for offline access
+- [x] add service worker for offline access
+- [ ] add feature to reveal all unmarked neighbors when tap & hold on mobile
 */
 
 class Game extends Grid {
