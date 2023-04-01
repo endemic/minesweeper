@@ -4,9 +4,11 @@
 <head>
   <title>Minësweeper</title>
   <meta charset="utf8">
+  <link rel="icon" href="images/flag.png">
 
   <script type="module">
     const EMPTY = 0;
+    const UNKNOWN = 9;
     const FLAG = 10;
     const MINE = 11;
 
@@ -152,6 +154,8 @@
         const clickedIndex = parseInt(event.target.dataset.index, 10);
         let nextDisplayGrid = [...this.displayGrid]; // shallow clone
 
+        // TODO: early return if the space has already been revealed
+
         if (this.mineGrid[clickedIndex] === MINE) {
           window.alert('u lose, you clicked on a mine!')
 
@@ -163,13 +167,38 @@
           });
         } else {
           // reveal whatever "safe" tile you clicked
-          nextDisplayGrid[clickedIndex] = this.mineGrid[clickedIndex];
+          // nextDisplayGrid[clickedIndex] = this.mineGrid[clickedIndex];
 
           // TODO: reveal all contiguous empty tiles
+          // TODO: this mutates `nextDisplayGrid`, as it is passed by reference
+          this.reveal(clickedIndex, nextDisplayGrid);
         }
 
         // update display
         this.render(nextDisplayGrid);
+      }
+
+      // recursive function that will reveal as much of the game board
+      // as possible if player clicks on an empty cell
+      reveal(index, nextDisplayGrid) {
+        // if this space has already been revealed, then stop
+        if (nextDisplayGrid[index] !== UNKNOWN) {
+          return;
+        }
+
+        // reveal the space
+        nextDisplayGrid[index] = this.mineGrid[index];
+
+        // if this space is a hint, then stop
+        if (nextDisplayGrid[index] !== EMPTY) {
+          return;
+        }
+
+        // otherwise, since the cell is empty, we check
+        // all 8 neighbors for more empty cells
+        this.getNeighbors(index).forEach(neighbor => {
+          this.reveal(neighbor, nextDisplayGrid);
+        });
       }
 
       render(nextDisplayGrid) {
