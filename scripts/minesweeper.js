@@ -20,6 +20,7 @@ TODO
 4. implement touch control
     -> change "click" to "mouseup" to differentiate between touch/mouse
 5. Fix styling
+6. Hook up settings button to show difficulty dialog
 
 Mobile control ideas:
   tap for flag, long tap to reveal
@@ -80,8 +81,9 @@ class Game extends Grid {
         // for each of these global handlers/interval
         const grid = document.querySelector('#grid');
 
-        grid.addEventListener('touchend', this.onClick.bind(this));
-        grid.addEventListener('click', this.onClick.bind(this));
+        grid.addEventListener('touchstart', this.onTouchStart.bind(this));
+        grid.addEventListener('touchend', this.onTouchEnd.bind(this));
+        grid.addEventListener('mouseup', this.onMouseUp.bind(this));
 
         // intercept right clicks within the game board, but not the whole window
         grid.addEventListener('contextmenu', this.onRightClick.bind(this));
@@ -115,7 +117,7 @@ class Game extends Grid {
         this.mineGrid = this.fill(this.mineGrid, EMPTY);
 
         this.flagCount = this.mineCount;
-        this.flagCountDisplay.textContent = this.flagCount;
+        this.flagCountDisplay.textContent = `left: ${this.flagCount}`;
 
         let placedMines = 0;
         while (placedMines < this.mineCount) {
@@ -173,23 +175,43 @@ class Game extends Grid {
         ].filter(withinBounds);
     }
 
-    onTouchEnd(e) {
-        // TODO: fill this out
-        // store local ref to last touch
-        const endTouch = e.changedTouches[0];
-
-        let xDiff = endTouch.clientX - this.currentTouch.clientX;
-        let yDiff = endTouch.clientY - this.currentTouch.clientY;
-    }
-
-    // TODO: change this to mouseUp to allow face to change when clicking
-    // 😮
-    onClick(event) {
+    onTouchStart(event) {
         event.preventDefault();
 
-        if (this.gameOver) {
-            return;
+        const tapped = {
+            x: parseInt(event.target.dataset.x, 10),
+            y: parseInt(event.target.dataset.y, 10)
+        };
+
+        this.touchStartTime = Date.now();
+
+        this.touchTimeout = window.setTimeout(event => {
+            this.action(tapped);
+        }, 250);
+    }
+
+    onTouchEnd(event) {
+        event.preventDefault();
+
+        const tapped = {
+            x: parseInt(event.target.dataset.x, 10),
+            y: parseInt(event.target.dataset.y, 10)
+        };
+
+        window.clearTimeout(this.touchTimeout);
+
+        const delta = Date.now() - this.touchStartTime;
+
+        console.log(`time delta: ${delta}`);
+
+        if (delta < 250) {
+            this.toggleFlag(tapped);
         }
+    }
+
+    // TODO: allow face to change to 😮 when clicking
+    onMouseUp(event) {
+        event.preventDefault();
 
         // TODO: clicking & dragging can produce NaN here
         const clicked = {
@@ -197,17 +219,36 @@ class Game extends Grid {
             y: parseInt(event.target.dataset.y, 10)
         };
 
+        this.action(clicked);
+    }
+
+    onRightClick(event) {
+        event.preventDefault();
+
+        const clicked = {
+            x: parseInt(event.target.dataset.x, 10),
+            y: parseInt(event.target.dataset.y, 10)
+        };
+
+        this.toggleFlag(clicked);
+    }
+
+    action({ x, y }) {
+        if (this.gameOver) {
+            return;
+        }
+
         this.startTimer();
 
         // don't do anything if cell contents are revealed
-        if (this.displayState[clicked.x][clicked.y] !== UNKNOWN) {
+        if (this.displayState[x][y] !== UNKNOWN) {
             return;
         }
 
         let nextDisplayState = this.displayStateCopy();
 
         // o no, u clicked a mine
-        if (this.mineGrid[clicked.x][clicked.y] === MINE) {
+        if (this.mineGrid[x][y] === MINE) {
             this.stopTimer();
 
             // show all mines in the level
@@ -220,7 +261,7 @@ class Game extends Grid {
             });
 
             // highlight the one you clicked
-            nextDisplayState[clicked.x][clicked.y] = EXPLODED;
+            nextDisplayState[x][y] = EXPLODED;
 
             // show a sad face
             this.button.textContent = '😫';
@@ -228,7 +269,7 @@ class Game extends Grid {
             this.gameOver = true;
         } else {
             // TODO: this works by reference
-            this.reveal(clicked, nextDisplayState);
+            this.reveal({ x, y }, nextDisplayState);
         }
 
         // update display
@@ -238,29 +279,22 @@ class Game extends Grid {
         this.checkWinCondition();
     }
 
-    onRightClick(event) {
-        event.preventDefault();
-
+    toggleFlag({ x, y }) {
         if (this.gameOver) {
             return;
         }
 
-        const clicked = {
-            x: parseInt(event.target.dataset.x, 10),
-            y: parseInt(event.target.dataset.y, 10)
-        };
-
         // don't do anything if cell contents are revealed
-        if (this.displayState[clicked.x][clicked.y] !== UNKNOWN &&
-            this.displayState[clicked.x][clicked.y] !== FLAG) {
+        if (this.displayState[x][y] !== UNKNOWN &&
+            this.displayState[x][y] !== FLAG) {
             return;
         }
 
         let nextDisplayState = this.displayStateCopy();
 
         // toggle flag in this cell
-        if (this.displayState[clicked.x][clicked.y] === FLAG) {
-            nextDisplayState[clicked.x][clicked.y] = UNKNOWN;
+        if (this.displayState[x][y] === FLAG) {
+            nextDisplayState[x][y] = UNKNOWN;
             this.flagCount += 1;
         } else {
             // You placed too many flags!
@@ -268,11 +302,11 @@ class Game extends Grid {
                 return;
             }
 
-            nextDisplayState[clicked.x][clicked.y] = FLAG;
+            nextDisplayState[x][y] = FLAG;
             this.flagCount -= 1;
         }
 
-        this.flagCountDisplay.textContent = this.flagCount;
+        this.flagCountDisplay.textContent = `left: ${this.flagCount}`;
 
         // update display
         this.render(nextDisplayState);
@@ -349,7 +383,6 @@ class Game extends Grid {
 
         // if you got here, you win!
 
-
         let nextDisplayState = this.displayStateCopy();
 
         // highlight all the correctly avoided mines in the level
@@ -365,6 +398,7 @@ class Game extends Grid {
 
         this.stopTimer();
         this.button.textContent = '😎';
+        this.flagCountDisplay.textContent = `left: 0`;
         this.gameOver = true;
     }
 
