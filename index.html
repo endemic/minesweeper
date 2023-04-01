@@ -6,6 +6,10 @@
   <meta charset="utf8">
 
   <script type="module">
+    const EMPTY = 0;
+    const FLAG = 10;
+    const MINE = 11;
+
     class Game {
       constructor() {
         // our grid contains simple integers to represent game objects;
@@ -94,7 +98,7 @@
         }
 
         // DEBUG -- immediately display mine state
-        this.render([...this.mineGrid]);
+        // this.render([...this.mineGrid]);
 
         // run any logic tests
         this.test();
@@ -146,20 +150,26 @@
 
       onClick(event) {
         const clickedIndex = parseInt(event.target.dataset.index, 10);
+        let nextDisplayGrid = [...this.displayGrid]; // shallow clone
 
-        if (this.mineIndexes.indexOf(clickedIndex) !== -1) {
-          console.log('u lose, you clicked on a mine!')
+        if (this.mineGrid[clickedIndex] === MINE) {
+          window.alert('u lose, you clicked on a mine!')
 
           // show all mines in the level
-          let nextState = [...this.displayGrid]; // shallow clone
-
-          this.mineIndexes.forEach(i => {
-            nextState[i] = 11; // mine
+          this.mineGrid.forEach((value, index) => {
+            if (value === MINE) {
+              nextDisplayGrid[index] = value;
+            }
           });
+        } else {
+          // reveal whatever "safe" tile you clicked
+          nextDisplayGrid[clickedIndex] = this.mineGrid[clickedIndex];
 
-          // update display
-          this.render(nextState);
+          // TODO: reveal all contiguous empty tiles
         }
+
+        // update display
+        this.render(nextDisplayGrid);
       }
 
       render(nextDisplayGrid) {
