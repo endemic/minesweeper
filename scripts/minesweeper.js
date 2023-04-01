@@ -21,7 +21,7 @@ const format = timeInSeconds => {
 /*
 TODO
 - [x] add service worker for offline access
-- [ ] add feature to reveal all unmarked neighbors when tap & hold on mobile
+- [x] add feature to reveal all unmarked neighbors when tap & hold on mobile
 */
 
 class Game extends Grid {
@@ -98,6 +98,11 @@ class Game extends Grid {
         // store ref to the reset button (also changes content based on player actions)
         this.button = document.querySelector('#face');
         this.button.addEventListener('click', this.reset.bind(this));
+
+        document.querySelector('#settings')
+            .addEventListener('click', e => {
+                window.location = 'settings.html';
+            });
 
         // store ref to the flag counter
         this.flagCountDisplay = document.querySelector('#flags');
@@ -359,6 +364,10 @@ class Game extends Grid {
         });
     }
 
+    // this method is specifically for mobile players so they can quickly reveal
+    // multiple neighboring cells without tapping & holding repeatedly
+    // Tap & hold on a revealed hint will then reveal all neighboring cells that
+    // aren't marked with flags
     revealNeighbors({ x, y }) {
         if (this.gameOver) {
             return;
@@ -366,7 +375,6 @@ class Game extends Grid {
 
         // don't do anything unless cell contents are a hint
         if (this.displayState[x][y] >= UNKNOWN) {
-            console.log(`${x}, ${y} = ${this.displayState[x][y]}; is not a hint!`);
             return;
         }
 
@@ -382,6 +390,8 @@ class Game extends Grid {
                 this.lose({ x: neighbor.x, y: neighbor.y }, nextDisplayState);
             }
         });
+
+        this.checkWinCondition();
 
         // update display
         this.render(nextDisplayState);
