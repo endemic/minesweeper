@@ -25,13 +25,14 @@ body {
 
 #grid {
     display: grid;
+    /* aspect-ratio: 0.533333333333333; */
     aspect-ratio: 1;
     width: 50%;
     /* The repeat() notation accepts 2 arguments: the first represents the
     number of times the defined tracks should repeat, and the second is 
     the track definition. */
-    grid-template-rows: repeat(16, auto);
-    grid-template-columns: repeat(16, auto);
+    grid-template-rows: repeat(10, auto);
+    grid-template-columns: repeat(10, auto);
 
     /* prevents scroll/drag */
     touch-action: none;
@@ -69,6 +70,10 @@ body {
 
 .four {
     background: url('../images/four.png') center/100% no-repeat;
+}
+
+.five {
+    background: url('../images/five.png') center/100% no-repeat;
 }
 
 .mine {
