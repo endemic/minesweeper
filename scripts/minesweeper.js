@@ -19,7 +19,8 @@ const format = timeInSeconds => {
 };
 
 /*
-5. Fix styling for desktop/mobile
+TODO
+- [ ] add service worker for offline access
 */
 
 class Game extends Grid {
