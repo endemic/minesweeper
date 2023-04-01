@@ -14,7 +14,13 @@ class Grid {
         // set up 2D array to store references to DOM nodes
         this.gridRef = Array(columns).fill().map(_ => Array(rows).fill());
 
-        let boardRef = document.querySelector('#grid');
+        let grid = document.querySelector('#grid');
+
+        // set appropriate CSS rules
+        grid.style.display = 'grid';
+        grid.style.gridTemplateRows = `repeat(${rows}, auto)`;
+        grid.style.gridTemplateColumns = `repeat(${columns}, auto)`;
+        grid.style.aspectRatio = rows / columns;
 
         // create the grid in our HTML page
         for (let y = 0; y < rows; y += 1) {
@@ -31,7 +37,7 @@ class Grid {
                 this.gridRef[x][y] = node;
 
                 // add the node to the actual page
-                boardRef.appendChild(node);
+                grid.appendChild(node);
             }
         }
     }
