@@ -3,6 +3,8 @@
 
 <head>
   <title>Minësweeper</title>
+  <meta charset="utf8">
+
   <script type="module">
     class Game {
       constructor() {
@@ -27,47 +29,88 @@
         this.rowCount = 10;
         this.columnCount = 10;
 
-        // set initial board state as empty
-        this.state = Array(this.rowCount * this.columnCount).fill(null);
+        // Create array backing the visual component of the game
+        // Grid will be reflected in DOM/CSS when `this.render()` is called
+        this.displayGrid = Array(this.rowCount * this.columnCount).fill(null);
 
         // set up DOM references
         let boardRef = document.querySelector('section.board');
         this.gridRef = [];
 
-        this.state.forEach((value, index) => {
+        this.displayGrid.forEach((value, index) => {
           let node = document.createElement('div');
           node.dataset.index = index;
 
           // Add to DOM
           boardRef.appendChild(node);
 
-          // Add to an easy-to-access variable
+          // Add to an easy-to-access array
           this.gridRef.push(node);
         });
 
-        let nextState = [...this.state];
+        let nextDisplayGrid = [...this.displayGrid];
 
         // set initial background
-        nextState.fill(9);
+        nextDisplayGrid.fill(9);
 
         // do initial draw
-        this.render(nextState);
+        this.render(nextDisplayGrid);
 
         // bind context variable to the current Game() object
         // for each of these global handlers/interval
         window.addEventListener('touchend', this.onClick.bind(this));
         window.addEventListener('click', this.onClick.bind(this));
 
-        // set up actual mines
-        // TODO: hardcoded on easy mode
-        this.mineIndexes = [];
-        while (this.mineIndexes.length < 10) {
+        // Set up grid that persists state of mines/clues
+        this.mineGrid = Array(this.rowCount * this.columnCount).fill(0);
+
+        // TODO: hardcoded to easy mode
+        let mineCount = 10;
+        while (mineCount > 1) {
           let randomIndex = Math.floor(Math.random() * this.columnCount * this.rowCount);
 
-          if (this.mineIndexes.indexOf(randomIndex) === -1) {
-            this.mineIndexes.push(randomIndex);
+          if (this.mineGrid[randomIndex] === 0) {
+            this.mineGrid[randomIndex] = 11;
+            mineCount -= 1;
           }
         }
+
+        // Set up clues by checking the 8 adjacent spaces
+        for (let i = 0; i < this.mineGrid.length; i += 1) {
+          if (this.mineGrid[i] === 11) {
+            continue;
+          }
+
+          let hintValue = this.getNeighbors(i).reduce((accumulator, index) => {
+            if (this.mineGrid[index] === 11) {
+              accumulator += 1;
+            }
+            return accumulator;
+          }, 0);
+
+          this.mineGrid[i] = hintValue;
+        }
+
+        // TODO: extract this to a generic "state dump" method
+        for (let row = 0; row < this.rowCount; row += 1) {
+          console.log(this.mineGrid.slice(row * this.columnCount, row * this.columnCount + this.columnCount))
+        }
+
+        // DEBUG -- immediately display mine state
+        this.render([...this.mineGrid]);
+      }
+
+      getNeighbors(index) {
+        return [
+          index - this.columnCount - 1,
+          index - this.columnCount,
+          index - this.columnCount + 1,
+          index - 1,
+          index + 1,
+          index + this.columnCount - 1,
+          index + this.columnCount,
+          index + this.columnCount + 1
+        ];
       }
 
       onTouchEnd(e) {
@@ -86,7 +129,7 @@
           console.log('u lose, you clicked on a mine!')
 
           // show all mines in the level
-          let nextState = [...this.state]; // shallow clone
+          let nextState = [...this.displayGrid]; // shallow clone
 
           this.mineIndexes.forEach(i => {
             nextState[i] = 11; // mine
@@ -98,16 +141,16 @@
       }
 
       update() {
-        let nextState = [...this.state]; // shallow clone
+        let nextState = [...this.displayGrid]; // shallow clone
 
         // update display
         this.render(nextState);
       }
 
-      render(nextState) {
+      render(nextDisplayGrid) {
         // get diff between current state/next state
-        let diffIndices = this.state.reduce((accumulator, currentValue, index) => {
-          let nextValue = nextState[index]
+        let diffIndices = this.displayGrid.reduce((accumulator, currentValue, index) => {
+          let nextValue = nextDisplayGrid[index]
           if (nextValue !== currentValue) {
             accumulator.push(index);
           }
@@ -115,17 +158,17 @@
         }, []);
 
         // update DOM references
-        diffIndices.forEach(index => this.gridRef[index].classList = this.valueMap[nextState[index]]);
+        diffIndices.forEach(index => this.gridRef[index].classList = this.valueMap[nextDisplayGrid[index]]);
 
         // set the next state as current state
-        this.state = nextState;
+        this.displayGrid = nextDisplayGrid;
       }
     };
 
     new Game()
   </script>
 
-  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="stylesheets/main.css">
 </head>
 
 <body>

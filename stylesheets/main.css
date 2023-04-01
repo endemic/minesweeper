@@ -33,28 +33,30 @@ body {
     border-top: 0;
     border-left: 0;
     box-sizing: border-box;
+    image-rendering: pixelated;
 }
 
 .empty {
-    background-color: white;
+    background: url('../images/empty.png') center/100% no-repeat;
 }
 
 .unknown {
-    background-color: lightgray;
+
+    background: url('../images/unknown.png') center/100% no-repeat;
 }
 
 .one {
-    background-color: blue;
+    background: url('../images/one.png') center/100% no-repeat;
 }
 
 .two {
-    background-color: green;
+    background: url('../images/two.png') center/100% no-repeat;
 }
 
 .three {
-    background-color: red;
+    background: url('../images/three.png') center/100% no-repeat;
 }
 
 .mine {
-    background-color: black;
+    background: url('../images/mine.png') center/100% no-repeat;
 }
