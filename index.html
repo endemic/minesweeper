@@ -6,6 +6,8 @@
   <meta charset="utf8">
   <link rel="icon" href="images/flag.png">
 
+  <script src="grid.js"></script>
+
   <script type="module">
     const EMPTY = 0;
     const UNKNOWN = 9;
@@ -25,14 +27,20 @@
     TODO
     2. don't allow additional input if player loses
     4. Add counter for placed flags
+    5. When game is won, place flags on any un-marked mines
     */
 
-    class Game {
+    class Game extends Grid {
       constructor() {
+        let rows = 16;
+        let columns = 16;
+
+        super(rows, columns);
+
         // our grid contains simple integers to represent game objects;
         // this map translates the numbers to a string, that can then be used as
         // human-readable reference or CSS class (for display purposes)
-        this.valueMap = {
+        this.cssClassMap = {
           0: 'empty',
           1: 'one',
           2: 'two',
@@ -48,42 +56,22 @@
           12: 'exploded'
         };
 
-        this.rowCount = 10;
-        this.columnCount = 10;
-
-        // Create array backing the visual component of the game
-        // Grid will be reflected in DOM/CSS when `this.render()` is called
-        this.displayGrid = Array(this.rowCount * this.columnCount).fill(null);
-
         // Set up grid that persists state of mines/clues
-        this.mineGrid = Array(this.rowCount * this.columnCount);
-
-        // set up DOM references
-        let boardRef = document.querySelector('section.board');
-        this.gridRef = [];
-
-        this.displayGrid.forEach((value, index) => {
-          let node = document.createElement('div');
-          node.dataset.index = index;
-
-          // Add to DOM
-          boardRef.appendChild(node);
-
-          // Add to an easy-to-access array
-          this.gridRef.push(node);
-        });
+        this.mineGrid = Array(rows).fill().map(_ => Array(columns).fill());
 
         // bind context variable to the current Game() object
         // for each of these global handlers/interval
-        boardRef.addEventListener('touchend', this.onClick.bind(this));
-        boardRef.addEventListener('click', this.onClick.bind(this));
+        const grid = document.querySelector('#grid');
+
+        grid.addEventListener('touchend', this.onClick.bind(this));
+        grid.addEventListener('click', this.onClick.bind(this));
 
         // intercept right clicks within the game board, but not the whole window
-        boardRef.addEventListener('contextmenu', this.onRightClick.bind(this));
+        grid.addEventListener('contextmenu', this.onRightClick.bind(this));
 
         // store ref to the reset button (also changes content based on player actions)
-        this.buttonRef = document.querySelector('button.face');
-        this.buttonRef.addEventListener('click', this.reset.bind(this));
+        this.button = document.querySelector('button.face');
+        this.button.addEventListener('click', this.reset.bind(this));
 
         // run any logic tests
         this.test();
@@ -93,88 +81,69 @@
       }
 
       reset() {
-        let nextDisplayGrid = [...this.displayGrid];
+        let nextDisplayState = this.displayStateCopy();
 
         // set initial background
-        nextDisplayGrid.fill(UNKNOWN);
+        nextDisplayState = this.fill(nextDisplayState, UNKNOWN);
 
         // do initial draw
-        this.render(nextDisplayGrid);
+        this.render(nextDisplayState);
 
         // reset state of mines
-        this.mineGrid.fill(EMPTY);
+        this.mineGrid = this.fill(this.mineGrid, EMPTY);
 
         // TODO: hardcoded to easy mode
-        let mineCount = 10;
-        while (mineCount > 1) {
-          let randomIndex = Math.floor(Math.random() * this.columnCount * this.rowCount);
+        // let mineCount = 10;
 
-          if (this.mineGrid[randomIndex] === 0) {
-            this.mineGrid[randomIndex] = 11;
+        let mineCount = 40;
+        while (mineCount > 1) {
+          let point = this.randomPoint();
+
+          if (this.mineGrid[point.x][point.y] === EMPTY) {
+            this.mineGrid[point.x][point.y] = MINE;
             mineCount -= 1;
           }
         }
 
         // Set up hints by checking the 8 adjacent spaces
-        for (let i = 0; i < this.mineGrid.length; i += 1) {
-          // don't overwrite mines with hints
-          if (this.mineGrid[i] === 11) {
-            continue;
-          }
+        this.mineGrid.forEach((row, x) => {
+          row.forEach((column, y) => {
+            // Don't overwrite mines
+            if (this.mineGrid[x][y] === MINE) {
+              return;
+            }
 
-          // Find the number of mines contained in neighboring cells
-          let hintValue = this.getNeighbors(i).filter(i => this.mineGrid[i] === 11).length;
+            // Find the number of mines contained in neighboring cells
+            let hint = this.getNeighbors(x, y).filter(point => this.mineGrid[point.x][point.y] === MINE).length;
 
-          this.mineGrid[i] = hintValue;
-        }
+            this.mineGrid[x][y] = hint;
+          })
+        })
 
-        // TODO: extract this to a generic "state dump" method
-        for (let row = 0; row < this.rowCount; row += 1) {
-          console.log(this.mineGrid.slice(row * this.columnCount, row * this.columnCount + this.columnCount))
-        }
-
-        // DEBUG -- immediately display mine state
-        // this.render([...this.mineGrid]);
-
-        this.buttonRef.textContent = '😃';
+        // Reset the button to a happy face!
+        this.button.textContent = '😃';
 
         this.stopTimer();
         this.resetTimer();
       }
 
-      getNeighbors(index) {
-        const calcRow = i => Math.floor(i / this.columnCount);
+      getNeighbors(x, y) {
+        const withinBounds = point => point.x >= 0 && point.x < this.rows && point.y >= 0 && point.y < this.columns;
 
-        // since we're using a 1D array, it's possible that a naive neighbor calculation
-        // would wrap to the other side of the board (e.g. a cell on the left-most column
-        // would have a "neighbor" in the right-most column). These helper functions
-        // ensure that wrapping doesn't occur. This could also be solved by using a 2D
-        // array for the board grid instead.
-        const inPrevRow = i => calcRow(i) === calcRow(index - this.columnCount);
-        const inSameRow = i => calcRow(i) === calcRow(index);
-        const inNextRow = i => calcRow(i) === calcRow(index + this.columnCount);
-
-        // ensure no negative or greater than array length indices
-        const withinBounds = i => i >= 0 && i < this.rowCount * this.columnCount;
-
-        let prevRow = [
-          index - this.columnCount - 1,
-          index - this.columnCount,
-          index - this.columnCount + 1
-        ].filter(withinBounds).filter(inPrevRow);
-
-        let sameRow = [
-          index - 1,
-          index + 1
-        ].filter(withinBounds).filter(inSameRow);
-
-        let nextRow = [
-          index + this.columnCount - 1,
-          index + this.columnCount,
-          index + this.columnCount + 1
-        ].filter(withinBounds).filter(inNextRow);
-
-        return [].concat(prevRow, sameRow, nextRow);
+        return [
+          // previous row
+          { x: x - 1, y: y - 1 },
+          { x: x, y: y - 1 },
+          { x: x + 1, y: y - 1 },
+          // current row
+          { x: x - 1, y: y },
+          // {x: x, y: y},
+          { x: x + 1, y: y },
+          // next row
+          { x: x - 1, y: y + 1 },
+          { x: x, y: y + 1 },
+          { x: x + 1, y: y + 1 },
+        ].filter(withinBounds);
       }
 
       onTouchEnd(e) {
@@ -189,40 +158,45 @@
       // TODO: change this to mouseUp to allow face to change when clicking
       // 😮
       onClick(event) {
-        const clickedIndex = parseInt(event.target.dataset.index, 10);
+        const clicked = {
+          x: parseInt(event.target.dataset.x, 10),
+          y: parseInt(event.target.dataset.y, 10)
+        };
 
         this.startTimer();
 
         // don't do anything if cell contents are revealed
-        if (this.displayGrid[clickedIndex] !== UNKNOWN) {
+        if (this.displayState[clicked.x][clicked.y] !== UNKNOWN) {
           return;
         }
 
-        let nextDisplayGrid = [...this.displayGrid]; // shallow clone
+        let nextDisplayState = this.displayStateCopy();
 
         // o no, u clicked a mine
-        if (this.mineGrid[clickedIndex] === MINE) {
+        if (this.mineGrid[clicked.x][clicked.y] === MINE) {
           this.stopTimer();
 
           // show all mines in the level
-          this.mineGrid.forEach((value, index) => {
-            if (value === MINE) {
-              nextDisplayGrid[index] = value;
-            }
+          this.mineGrid.forEach((row, x) => {
+            row.forEach((column, y) => {
+              if (this.mineGrid[x][y] === MINE) {
+                nextDisplayState[x][y] = MINE;
+              }
+            })
           });
 
           // highlight the one you clicked
-          nextDisplayGrid[clickedIndex] = EXPLODED;
+          nextDisplayState[clicked.x][clicked.y] = EXPLODED;
 
           // show a sad face
-          this.buttonRef.textContent = '😫';
+          this.button.textContent = '😫';
         } else {
-          // TODO: this mutates `nextDisplayGrid`, as it is passed by reference
-          this.reveal(clickedIndex, nextDisplayGrid);
+          // TODO: this works by reference
+          this.reveal(clicked, nextDisplayState);
         }
 
         // update display
-        this.render(nextDisplayGrid);
+        this.render(nextDisplayState);
 
         // did we win?
         this.checkWinCondition();
@@ -231,47 +205,51 @@
       onRightClick(event) {
         event.preventDefault();
 
-        const clickedIndex = parseInt(event.target.dataset.index, 10);
+        const clicked = {
+          x: parseInt(event.target.dataset.x, 10),
+          y: parseInt(event.target.dataset.y, 10)
+        };
+
 
         // don't do anything if cell contents are revealed
         // TODO: extract this logic to allow flagged spaces to be clicked
-        if (this.displayGrid[clickedIndex] !== UNKNOWN &&
-          this.displayGrid[clickedIndex] !== FLAG) {
+        if (this.displayState[clicked.x][clicked.y] !== UNKNOWN &&
+          this.displayState[clicked.x][clicked.y] !== FLAG) {
           return;
         }
 
-        let nextDisplayGrid = [...this.displayGrid]; // shallow clone
+        let nextDisplayState = this.displayStateCopy();
 
         // toggle flag in this cell
-        if (this.displayGrid[clickedIndex] === FLAG) {
-          nextDisplayGrid[clickedIndex] = UNKNOWN;
+        if (this.displayState[clicked.x][clicked.y] === FLAG) {
+          nextDisplayState[clicked.x][clicked.y] = UNKNOWN;
         } else {
-          nextDisplayGrid[clickedIndex] = FLAG;
+          nextDisplayState[clicked.x][clicked.y] = FLAG;
         }
 
         // update display
-        this.render(nextDisplayGrid);
+        this.render(nextDisplayState);
       }
 
       // recursive function that will reveal as much of the game board
       // as possible if player clicks on an empty cell
-      reveal(index, nextDisplayGrid) {
+      reveal(point, nextDisplayGrid) {
         // if this space has already been revealed, then stop
-        if (nextDisplayGrid[index] !== UNKNOWN) {
+        if (nextDisplayGrid[point.x][point.y] !== UNKNOWN) {
           return;
         }
 
         // reveal the space
-        nextDisplayGrid[index] = this.mineGrid[index];
+        nextDisplayGrid[point.x][point.y] = this.mineGrid[point.x][point.y];
 
         // if this space is a hint, then stop
-        if (nextDisplayGrid[index] !== EMPTY) {
+        if (nextDisplayGrid[point.x][point.y] !== EMPTY) {
           return;
         }
 
         // otherwise, since the cell is empty, we check
         // all 8 neighbors for more empty cells
-        this.getNeighbors(index).forEach(neighbor => {
+        this.getNeighbors(point.x, point.y).forEach(neighbor => {
           this.reveal(neighbor, nextDisplayGrid);
         });
       }
@@ -305,55 +283,43 @@
         timerRef.textContent = format(this.timeInSeconds);
       }
 
+      // compare displayState with mineGrid; if every space in 
+      // displayState is revealed except for mines, you win!
       checkWinCondition() {
-        // compare displayGrid with mineGrid; if every space in 
-        // displayGrid is revealed except for mines, you win!
-
-        // search through displayGrid for unrevealed cells;
+        // search through displayState for unrevealed cells;
         // if the cell is unrevealed, and _doesn't_ have a mine
         // in it, then the player hasn't won yet
-        const won = this.displayGrid.every((value, index) => {
-          if ((value === UNKNOWN || value === FLAG) && this.mineGrid[index] !== MINE) {
-            console.log(`cell ${index} has not yet been revealed`);
-            return false;
-          }
+        const won = this.displayState.every((row, x) => {
+          return row.every((column, y) => {
+            const value = this.displayState[x][y];
 
-          return true;
+            if ((value === UNKNOWN || value === FLAG) && this.mineGrid[x][y] !== MINE) {
+              console.log(`space (${x}, ${y}) has not yet been revealed`);
+              return false;
+            }
+
+            return true;
+          })
         });
 
         if (won) {
           this.stopTimer();
-          this.buttonRef.textContent = '😎';
+          this.button.textContent = '😎';
         }
       }
 
-      render(nextDisplayGrid) {
-        // get diff between current state/next state
-        let diffIndices = this.displayGrid.reduce((accumulator, currentValue, index) => {
-          let nextValue = nextDisplayGrid[index]
-          if (nextValue !== currentValue) {
-            accumulator.push(index);
-          }
-          return accumulator;
-        }, []);
-
-        // update DOM references
-        diffIndices.forEach(index => this.gridRef[index].classList = this.valueMap[nextDisplayGrid[index]]);
-
-        // set the next state as current state
-        this.displayGrid = nextDisplayGrid;
-      }
-
       test() {
-        const previousValues = [this.columnCount, this.rowCount];
-        this.columnCount = 10;
-        this.rowCount = 10;
+        const previousValues = [this.columns, this.rows];
+        this.columns = 10;
+        this.rows = 10;
 
-        console.assert(this.getNeighbors(0).join() === '1,10,11', `getNeighbors(0) = ${this.getNeighbors(0)}`);
-        console.assert(this.getNeighbors(9).join() === '8,18,19', `getNeighbors(9) = ${this.getNeighbors(9)}`);
-        console.assert(this.getNeighbors(99).join() === '88,89,98', `getNeighbors(99) = ${this.getNeighbors(99)}`);
+        const stringify = point => `(${point.x},${point.y})`;
 
-        [this.columnCount, this.rowCount] = previousValues;
+        console.assert(this.getNeighbors(0, 0).map(stringify).join(',') === '(1,0),(0,1),(1,1)', `getNeighbors(0,0) = ${this.getNeighbors(0, 0).map(stringify).join(',')}`);
+        console.assert(this.getNeighbors(5, 5).map(stringify).join(',') === '(4,4),(5,4),(6,4),(4,5),(6,5),(4,6),(5,6),(6,6)', `getNeighbors(5, 5) = ${this.getNeighbors(5, 5).map(stringify).join(',')}`);
+        console.assert(this.getNeighbors(9, 9).map(stringify).join(',') === '(8,8),(9,8),(8,9)', `getNeighbors(9, 9) = ${this.getNeighbors(9, 9).map(stringify).join(',')}`);
+
+        [this.columns, this.rows] = previousValues;
       }
     };
 
@@ -369,7 +335,7 @@
     <button class="face">😃</button>
     <section class="timer">00:00</section>
 
-    <section class="board"></section>
+    <section id="grid"></section>
   </main>
 </body>
 
