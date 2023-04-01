@@ -12,6 +12,15 @@
     const FLAG = 10;
     const MINE = 11;
 
+    /*
+    TODO
+    1. make flag have grey background
+    2. don't allow additional input if player loses
+    3. make clicked mine have red background
+    4. Add emoji face button to reset game
+    5. Add timer that starts when first cell is revealed
+    */
+
     class Game {
       constructor() {
         // our grid contains simple integers to represent game objects;
@@ -183,6 +192,9 @@
 
         // update display
         this.render(nextDisplayGrid);
+
+        // did we win?
+        this.checkWinCondition();
       }
 
       onRightClick(event) {
@@ -231,6 +243,27 @@
         this.getNeighbors(index).forEach(neighbor => {
           this.reveal(neighbor, nextDisplayGrid);
         });
+      }
+
+      checkWinCondition() {
+        // compare displayGrid with mineGrid; if every space in 
+        // displayGrid is revealed except for mines, you win!
+
+        // search through displayGrid for unrevealed cells;
+        // if the cell is unrevealed, and _doesn't_ have a mine
+        // in it, then the player hasn't won yet
+        const won = this.displayGrid.every((value, index) => {
+          if ((value === UNKNOWN || value === FLAG) && this.mineGrid[index] !== MINE) {
+            console.log(`cell ${index} has not yet been revealed`);
+            return false;
+          }
+
+          return true;
+        });
+
+        if (won) {
+          window.alert('u won, bro');
+        }
       }
 
       render(nextDisplayGrid) {
