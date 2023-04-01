@@ -83,6 +83,9 @@
         this.button = document.querySelector('button.face');
         this.button.addEventListener('click', this.reset.bind(this));
 
+        // store ref to the flag counter
+        this.flagCountDisplay = document.querySelector('.flags');
+
         // run any logic tests
         this.test();
 
@@ -110,7 +113,11 @@
 
         // expert
         // let mineCount = 99;
-        while (mineCount > 1) {
+
+        this.flagCount = mineCount;
+        this.flagCountDisplay.textContent = this.flagCount;
+
+        while (mineCount > 0) {
           let point = this.randomPoint();
 
           if (this.mineGrid[point.x][point.y] === EMPTY) {
@@ -229,7 +236,6 @@
           y: parseInt(event.target.dataset.y, 10)
         };
 
-
         // don't do anything if cell contents are revealed
         // TODO: extract this logic to allow flagged spaces to be clicked
         if (this.displayState[clicked.x][clicked.y] !== UNKNOWN &&
@@ -242,9 +248,18 @@
         // toggle flag in this cell
         if (this.displayState[clicked.x][clicked.y] === FLAG) {
           nextDisplayState[clicked.x][clicked.y] = UNKNOWN;
+          this.flagCount += 1;
         } else {
+          // You placed too many flags!
+          if (this.flagCount === 0) {
+            return;
+          }
+
           nextDisplayState[clicked.x][clicked.y] = FLAG;
+          this.flagCount -= 1;
         }
+
+        this.flagCountDisplay.textContent = this.flagCount;
 
         // update display
         this.render(nextDisplayState);
