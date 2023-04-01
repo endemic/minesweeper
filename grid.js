@@ -20,7 +20,7 @@ class Grid {
         grid.style.display = 'grid';
         grid.style.gridTemplateRows = `repeat(${rows}, auto)`;
         grid.style.gridTemplateColumns = `repeat(${columns}, auto)`;
-        grid.style.aspectRatio = rows / columns;
+        grid.style.aspectRatio = columns / rows;
 
         // create the grid in our HTML page
         for (let y = 0; y < rows; y += 1) {

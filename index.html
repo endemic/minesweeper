@@ -26,11 +26,7 @@
     /*
     TODO
     2. don't allow additional input if player loses
-    4. Add counter for placed flags
-    5. ~~When game is won, place flags on any un-marked mines~~
-    7. difficulty select (expert: 16x30 	99mines)
-    8. dynamically set the css of the grid so that all the cells are equal size
-    
+
     Mobile control ideas:
       tap for flag, long tap to reveal
       pinch-to-zoom? tap and drag to show more of a larger board
@@ -38,14 +34,30 @@
 
     class Game extends Grid {
       constructor() {
-        // let rows = 30;
-        // let columns = 16;
-        // let rows = 16;
-        // let columns = 16;
-        let rows = 10;
-        let columns = 10;
+        let rows;
+        let columns;
+        let mineCount;
+
+        switch (window.location.hash) {
+          case '#intermediate':
+            rows = 16;
+            columns = 16;
+            mineCount = 40;
+            break;
+          case '#hard':
+            rows = 30;
+            columns = 16;
+            mineCount = 99;
+            break;
+          default:
+            rows = 10;
+            columns = 10;
+            mineCount = 10;
+        }
 
         super(rows, columns);
+
+        this.mineCount = mineCount;
 
         // our grid contains simple integers to represent game objects;
         // this map translates the numbers to a string, that can then be used as
@@ -105,24 +117,15 @@
         // reset state of mines
         this.mineGrid = this.fill(this.mineGrid, EMPTY);
 
-        // easy
-        let mineCount = 10;
-
-        // intermediate
-        // let mineCount = 40;
-
-        // expert
-        // let mineCount = 99;
-
-        this.flagCount = mineCount;
+        this.flagCount = this.mineCount;
         this.flagCountDisplay.textContent = this.flagCount;
 
-        while (mineCount > 0) {
+        while (this.mineCount > 0) {
           let point = this.randomPoint();
 
           if (this.mineGrid[point.x][point.y] === EMPTY) {
             this.mineGrid[point.x][point.y] = MINE;
-            mineCount -= 1;
+            this.mineCount -= 1;
           }
         }
 
