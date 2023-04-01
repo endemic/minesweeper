@@ -71,6 +71,10 @@ button {
     background: url('../images/five.png') center/100% no-repeat;
 }
 
+.six {
+    background: url('../images/six.png') center/100% no-repeat;
+}
+
 .mine {
     background: url('../images/mine.png') center/100% no-repeat;
 }
