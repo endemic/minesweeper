@@ -3,6 +3,7 @@ const UNKNOWN = 9;
 const FLAG = 10;
 const MINE = 11;
 const EXPLODED = 12;
+const SUCCESS = 13;
 
 const format = timeInSeconds => {
     const minutes = String(Math.floor(timeInSeconds / 60));
@@ -14,8 +15,9 @@ const format = timeInSeconds => {
 
 /*
 TODO
-2. don't allow additional input if player loses
 3. watch hash change for difficulty select (https://caniuse.com/?search=hash)
+    -> dunno if this'll work, as the class constructor would have to be re-invoked
+4. implement touch control
 
 Mobile control ideas:
   tap for flag, long tap to reveal
@@ -65,7 +67,8 @@ class Game extends Grid {
             9: 'unknown',
             10: 'flag',
             11: 'mine',
-            12: 'exploded'
+            12: 'exploded',
+            13: 'success'
         };
 
         // Set up grid that persists state of mines/clues
@@ -96,6 +99,8 @@ class Game extends Grid {
     }
 
     reset() {
+        this.gameOver = false;
+
         let nextDisplayState = this.displayStateCopy();
 
         // set initial background
@@ -177,6 +182,12 @@ class Game extends Grid {
     // TODO: change this to mouseUp to allow face to change when clicking
     // 😮
     onClick(event) {
+        event.preventDefault();
+
+        if (this.gameOver) {
+            return;
+        }
+
         // TODO: clicking & dragging can produce NaN here
         const clicked = {
             x: parseInt(event.target.dataset.x, 10),
@@ -210,6 +221,8 @@ class Game extends Grid {
 
             // show a sad face
             this.button.textContent = '😫';
+
+            this.gameOver = true;
         } else {
             // TODO: this works by reference
             this.reveal(clicked, nextDisplayState);
@@ -224,6 +237,10 @@ class Game extends Grid {
 
     onRightClick(event) {
         event.preventDefault();
+
+        if (this.gameOver) {
+            return;
+        }
 
         const clicked = {
             x: parseInt(event.target.dataset.x, 10),
@@ -329,8 +346,23 @@ class Game extends Grid {
         }
 
         // if you got here, you win!
+
+        // highlight all the correctly avoided mines in the level
+        let nextDisplayState = this.displayStateCopy();
+
+        this.mineGrid.forEach((row, x) => {
+            row.forEach((column, y) => {
+                if (this.mineGrid[x][y] === MINE) {
+                    nextDisplayState[x][y] = SUCCESS;
+                }
+            })
+        });
+
+        this.render(nextDisplayState);
+
         this.stopTimer();
         this.button.textContent = '😎';
+        this.gameOver = true;
     }
 
     test() {

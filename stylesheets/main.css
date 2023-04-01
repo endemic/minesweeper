@@ -78,6 +78,10 @@ main {
     background: url('../images/mine.png') red center/100% no-repeat;
 }
 
+.success {
+    background: url('../images/success.png') center/100% no-repeat;
+}
+
 /* desktop styles */
 @media (min-width: 768px) {
     main {
