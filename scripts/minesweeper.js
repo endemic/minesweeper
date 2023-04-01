@@ -18,6 +18,8 @@ TODO
 3. watch hash change for difficulty select (https://caniuse.com/?search=hash)
     -> dunno if this'll work, as the class constructor would have to be re-invoked
 4. implement touch control
+    -> change "click" to "mouseup" to differentiate between touch/mouse
+5. Fix styling
 
 Mobile control ideas:
   tap for flag, long tap to reveal
@@ -135,7 +137,7 @@ class Game extends Grid {
                 }
 
                 // Find the number of mines contained in neighboring cells
-                let hint = this.getNeighbors(x, y).filter(point => this.mineGrid[point.x][point.y] === MINE).length;
+                let hint = this.getNeighbors(x, y).filter(({ x, y }) => this.mineGrid[x][y] === MINE).length;
 
                 this.mineGrid[x][y] = hint;
             }
@@ -152,7 +154,8 @@ class Game extends Grid {
     }
 
     getNeighbors(x, y) {
-        const withinBounds = point => point.x >= 0 && point.x < this.columns && point.y >= 0 && point.y < this.rows;
+        // function to ensure that (x, y) coords are within our data structure
+        const withinBounds = ({ x, y }) => x >= 0 && x < this.columns && y >= 0 && y < this.rows;
 
         return [
             // previous row
@@ -248,7 +251,6 @@ class Game extends Grid {
         };
 
         // don't do anything if cell contents are revealed
-        // TODO: extract this logic to allow flagged spaces to be clicked
         if (this.displayState[clicked.x][clicked.y] !== UNKNOWN &&
             this.displayState[clicked.x][clicked.y] !== FLAG) {
             return;
@@ -278,24 +280,24 @@ class Game extends Grid {
 
     // recursive function that will reveal as much of the game board
     // as possible if player clicks on an empty cell
-    reveal(point, nextDisplayGrid) {
+    reveal({ x, y }, nextDisplayGrid) {
 
         // if this space has already been revealed, then stop
-        if (nextDisplayGrid[point.x][point.y] !== UNKNOWN) {
+        if (nextDisplayGrid[x][y] !== UNKNOWN) {
             return;
         }
 
         // reveal the space
-        nextDisplayGrid[point.x][point.y] = this.mineGrid[point.x][point.y];
+        nextDisplayGrid[x][y] = this.mineGrid[x][y];
 
         // if this space is a hint, then stop
-        if (nextDisplayGrid[point.x][point.y] !== EMPTY) {
+        if (nextDisplayGrid[x][y] !== EMPTY) {
             return;
         }
 
         // otherwise, since the cell is empty, we check
         // all 8 neighbors for more empty cells
-        this.getNeighbors(point.x, point.y).forEach(neighbor => {
+        this.getNeighbors(x, y).forEach(neighbor => {
             this.reveal(neighbor, nextDisplayGrid);
         });
     }
@@ -347,9 +349,10 @@ class Game extends Grid {
 
         // if you got here, you win!
 
-        // highlight all the correctly avoided mines in the level
+
         let nextDisplayState = this.displayStateCopy();
 
+        // highlight all the correctly avoided mines in the level
         this.mineGrid.forEach((row, x) => {
             row.forEach((column, y) => {
                 if (this.mineGrid[x][y] === MINE) {
