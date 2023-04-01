@@ -67,6 +67,9 @@
         window.addEventListener('touchend', this.onClick.bind(this));
         window.addEventListener('click', this.onClick.bind(this));
 
+        // intercept right clicks within the game board, but not the whole window
+        boardRef.addEventListener('contextmenu', this.onRightClick.bind(this));
+
         // Set up grid that persists state of mines/clues
         this.mineGrid = Array(this.rowCount * this.columnCount).fill(0);
 
@@ -152,9 +155,13 @@
 
       onClick(event) {
         const clickedIndex = parseInt(event.target.dataset.index, 10);
-        let nextDisplayGrid = [...this.displayGrid]; // shallow clone
 
-        // TODO: early return if the space has already been revealed
+        // don't do anything if cell contents are revealed
+        if (this.displayGrid[clickedIndex] !== UNKNOWN) {
+          return;
+        }
+
+        let nextDisplayGrid = [...this.displayGrid]; // shallow clone
 
         if (this.mineGrid[clickedIndex] === MINE) {
           window.alert('u lose, you clicked on a mine!')
@@ -172,6 +179,31 @@
           // TODO: reveal all contiguous empty tiles
           // TODO: this mutates `nextDisplayGrid`, as it is passed by reference
           this.reveal(clickedIndex, nextDisplayGrid);
+        }
+
+        // update display
+        this.render(nextDisplayGrid);
+      }
+
+      onRightClick(event) {
+        event.preventDefault();
+
+        const clickedIndex = parseInt(event.target.dataset.index, 10);
+
+        // don't do anything if cell contents are revealed
+        // TODO: extract this logic to allow flagged spaces to be clicked
+        if (this.displayGrid[clickedIndex] !== UNKNOWN &&
+          this.displayGrid[clickedIndex] !== FLAG) {
+          return;
+        }
+
+        let nextDisplayGrid = [...this.displayGrid]; // shallow clone
+
+        // toggle flag in this cell
+        if (this.displayGrid[clickedIndex] === FLAG) {
+          nextDisplayGrid[clickedIndex] = UNKNOWN;
+        } else {
+          nextDisplayGrid[clickedIndex] = FLAG;
         }
 
         // update display

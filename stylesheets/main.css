@@ -64,3 +64,7 @@ body {
 .mine {
     background: url('../images/mine.png') center/100% no-repeat;
 }
+
+.flag {
+    background: url('../images/flag.png') center/100% no-repeat;
+}
