@@ -12,6 +12,14 @@
     const FLAG = 10;
     const MINE = 11;
 
+    const format = timeInSeconds => {
+      const minutes = String(Math.floor(timeInSeconds / 60));
+      const seconds = String(timeInSeconds % 60);
+      const pad = input => input.length === 1 ? `0${input}` : input;
+
+      return `${pad(minutes)}:${pad(seconds)}`;
+    };
+
     /*
     TODO
     1. make flag have grey background
@@ -162,8 +170,12 @@
         let yDiff = endTouch.clientY - this.currentTouch.clientY;
       }
 
+      // TODO: change this to mouseUp to allow face to change when clicking
+      // 😃😫😮
       onClick(event) {
         const clickedIndex = parseInt(event.target.dataset.index, 10);
+
+        this.startTimer();
 
         // don't do anything if cell contents are revealed
         if (this.displayGrid[clickedIndex] !== UNKNOWN) {
@@ -245,6 +257,25 @@
         });
       }
 
+      startTimer() {
+        // only init timer once
+        if (this.timerInterval) {
+          return;
+        }
+
+        this.timeInSeconds = 0;
+        const timerRef = document.querySelector('.timer');
+
+        this.timerInterval = window.setInterval(() => {
+          this.timeInSeconds += 1;
+          timerRef.textContent = format(this.timeInSeconds);
+        }, 1000);
+      }
+
+      stopTimer() {
+        window.clearInterval(this.timerInterval);
+      }
+
       checkWinCondition() {
         // compare displayGrid with mineGrid; if every space in 
         // displayGrid is revealed except for mines, you win!
@@ -262,7 +293,8 @@
         });
 
         if (won) {
-          window.alert('u won, bro');
+          this.stopTimer();
+          window.alert(`u won, bro! total time: ${format(this.timeInSeconds)}`);
         }
       }
 
@@ -303,10 +335,11 @@
 </head>
 
 <body>
-  <div class="game">
+  <main class="game">
+    <section class="timer">00:00</section>
+    <button class="face">😃</button>
     <section class="board"></section>
-    <section class="scoreboard"></section>
-  </div>
+  </main>
 </body>
 
 </html>
