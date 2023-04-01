@@ -56,6 +56,9 @@
         // Grid will be reflected in DOM/CSS when `this.render()` is called
         this.displayGrid = Array(this.rowCount * this.columnCount).fill(null);
 
+        // Set up grid that persists state of mines/clues
+        this.mineGrid = Array(this.rowCount * this.columnCount);
+
         // set up DOM references
         let boardRef = document.querySelector('section.board');
         this.gridRef = [];
@@ -71,24 +74,36 @@
           this.gridRef.push(node);
         });
 
-        let nextDisplayGrid = [...this.displayGrid];
-
-        // set initial background
-        nextDisplayGrid.fill(9);
-
-        // do initial draw
-        this.render(nextDisplayGrid);
-
         // bind context variable to the current Game() object
         // for each of these global handlers/interval
-        window.addEventListener('touchend', this.onClick.bind(this));
-        window.addEventListener('click', this.onClick.bind(this));
+        boardRef.addEventListener('touchend', this.onClick.bind(this));
+        boardRef.addEventListener('click', this.onClick.bind(this));
 
         // intercept right clicks within the game board, but not the whole window
         boardRef.addEventListener('contextmenu', this.onRightClick.bind(this));
 
-        // Set up grid that persists state of mines/clues
-        this.mineGrid = Array(this.rowCount * this.columnCount).fill(0);
+        // store ref to the reset button (also changes content based on player actions)
+        this.buttonRef = document.querySelector('button.face');
+        this.buttonRef.addEventListener('click', this.reset.bind(this));
+
+        // run any logic tests
+        this.test();
+
+        // set up initial game state
+        this.reset();
+      }
+
+      reset() {
+        let nextDisplayGrid = [...this.displayGrid];
+
+        // set initial background
+        nextDisplayGrid.fill(UNKNOWN);
+
+        // do initial draw
+        this.render(nextDisplayGrid);
+
+        // reset state of mines
+        this.mineGrid.fill(EMPTY);
 
         // TODO: hardcoded to easy mode
         let mineCount = 10;
@@ -122,8 +137,10 @@
         // DEBUG -- immediately display mine state
         // this.render([...this.mineGrid]);
 
-        // run any logic tests
-        this.test();
+        this.buttonRef.textContent = '😃';
+
+        this.stopTimer();
+        this.resetTimer();
       }
 
       getNeighbors(index) {
@@ -171,7 +188,7 @@
       }
 
       // TODO: change this to mouseUp to allow face to change when clicking
-      // 😃😫😮
+      // 😮
       onClick(event) {
         const clickedIndex = parseInt(event.target.dataset.index, 10);
 
@@ -184,8 +201,9 @@
 
         let nextDisplayGrid = [...this.displayGrid]; // shallow clone
 
+        // o no, u clicked a mine
         if (this.mineGrid[clickedIndex] === MINE) {
-          window.alert('u lose, you clicked on a mine!')
+          this.stopTimer();
 
           // show all mines in the level
           this.mineGrid.forEach((value, index) => {
@@ -193,11 +211,10 @@
               nextDisplayGrid[index] = value;
             }
           });
-        } else {
-          // reveal whatever "safe" tile you clicked
-          // nextDisplayGrid[clickedIndex] = this.mineGrid[clickedIndex];
 
-          // TODO: reveal all contiguous empty tiles
+          // show a sad face
+          this.buttonRef.textContent = '😫';
+        } else {
           // TODO: this mutates `nextDisplayGrid`, as it is passed by reference
           this.reveal(clickedIndex, nextDisplayGrid);
         }
@@ -274,6 +291,16 @@
 
       stopTimer() {
         window.clearInterval(this.timerInterval);
+
+        // timerInterval still stores the integer ID; clear it out
+        // so if the player resets, the timer will start again
+        this.timerInterval = null;
+      }
+
+      resetTimer() {
+        this.timeInSeconds = 0;
+        const timerRef = document.querySelector('.timer');
+        timerRef.textContent = format(this.timeInSeconds);
       }
 
       checkWinCondition() {
@@ -294,7 +321,7 @@
 
         if (won) {
           this.stopTimer();
-          window.alert(`u won, bro! total time: ${format(this.timeInSeconds)}`);
+          this.buttonRef.textContent = '😎';
         }
       }
 
