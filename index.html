@@ -120,12 +120,13 @@
         this.flagCount = this.mineCount;
         this.flagCountDisplay.textContent = this.flagCount;
 
-        while (this.mineCount > 0) {
+        let placedMines = 0;
+        while (placedMines < this.mineCount) {
           let point = this.randomPoint();
 
           if (this.mineGrid[point.x][point.y] === EMPTY) {
             this.mineGrid[point.x][point.y] = MINE;
-            this.mineCount -= 1;
+            placedMines += 1;
           }
         }
 
