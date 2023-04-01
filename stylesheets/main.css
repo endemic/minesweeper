@@ -33,6 +33,7 @@ button#settings {
     border: 0;
     background: none;
     max-width: 25%;
+    padding: 0;
 }
 
 #info {
