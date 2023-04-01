@@ -20,8 +20,6 @@ const format = timeInSeconds => {
 
 /*
 5. Fix styling for desktop/mobile
-6. Hook up settings button to go to help page
-8. save best times based on difficulty
 */
 
 class Game extends Grid {
@@ -31,7 +29,10 @@ class Game extends Grid {
         let mineCount;
 
         const urlParams = new URLSearchParams(window.location.search);
-        const difficulty = urlParams.get('difficulty') || 'easy';
+        const difficulty = urlParams.get('difficulty') || localStorage.getItem('minesweeper:difficulty') || 'easy';
+
+        // persist difficulty
+        localStorage.setItem('minesweeper:difficulty', difficulty);
 
         switch (difficulty) {
             case 'medium':
@@ -168,6 +169,19 @@ class Game extends Grid {
                 'medium': { timeInSeconds: null, timestamp: null },
                 'hard': { timeInSeconds: null, timestamp: null }
             }));
+        }
+    }
+
+    saveHighScore() {
+        // save high score/fastest time
+        let highScores = JSON.parse(localStorage.getItem('minesweeper:highScores'));
+
+        let currentBest = highScores[this.difficulty];
+
+        if (!currentBest.timeInSeconds || this.timeInSeconds <= currentBest.timeInSeconds) {
+            highScores[this.difficulty] = { timeInSeconds: this.timeInSeconds, timestamp: Date.now() };
+
+            localStorage.setItem('minesweeper:highScores', JSON.stringify(highScores));
         }
     }
 
@@ -366,7 +380,6 @@ class Game extends Grid {
             return;
         }
 
-        this.timeInSeconds = 0;
         const timerRef = document.querySelector('#timer');
 
         this.timerInterval = window.setInterval(() => {
@@ -425,16 +438,7 @@ class Game extends Grid {
         this.flagCountDisplay.textContent = `left:0`;
         this.gameOver = true;
 
-        // save high score/fastest time
-        let highScores = JSON.parse(localStorage.getItem('minesweeper:highScores'));
-
-        let currentBest = highScores[this.difficulty];
-
-        if (!currentBest.timeInSeconds || this.timeInSeconds <= currentBest.timeInSeconds) {
-            highScores[this.difficulty] = { timeInSeconds: this.timeInSeconds, timestamp: Date.now() };
-
-            localStorage.setItem('minesweeper:highScores', JSON.stringify(highScores));
-        }
+        this.saveHighScore();
     }
 
     test() {
