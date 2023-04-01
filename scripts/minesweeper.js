@@ -14,12 +14,9 @@ const format = timeInSeconds => {
 };
 
 /*
-TODO
-3. watch hash change for difficulty select (https://caniuse.com/?search=hash)
-    -> dunno if this'll work, as the class constructor would have to be re-invoked
-    -> settings button shows overlay with links to re-load the page w/ appropriate "difficulty" query param
 5. Fix styling
 6. Hook up settings button to show difficulty dialog
+7. bug = removing a flag will reveal the cell
 */
 
 class Game extends Grid {
@@ -28,13 +25,15 @@ class Game extends Grid {
         let columns;
         let mineCount;
 
-        switch (window.location.hash) {
-            case '#intermediate':
+        const urlParams = new URLSearchParams(window.location.search);
+
+        switch (urlParams.get('difficulty')) {
+            case 'medium':
                 rows = 16;
                 columns = 16;
                 mineCount = 40;
                 break;
-            case '#hard':
+            case 'hard':
                 rows = 30;
                 columns = 16;
                 mineCount = 99;
@@ -78,6 +77,7 @@ class Game extends Grid {
 
         grid.addEventListener('touchstart', this.onTouchStart.bind(this));
         grid.addEventListener('touchend', this.onTouchEnd.bind(this));
+        grid.addEventListener('mousedown', this.onMouseDown.bind(this));
         grid.addEventListener('mouseup', this.onMouseUp.bind(this));
 
         // intercept right clicks within the game board, but not the whole window
@@ -112,7 +112,7 @@ class Game extends Grid {
         this.mineGrid = this.fill(this.mineGrid, EMPTY);
 
         this.flagCount = this.mineCount;
-        this.flagCountDisplay.textContent = `left: ${this.flagCount}`;
+        this.flagCountDisplay.textContent = `left:${this.flagCount}`;
 
         let placedMines = 0;
         while (placedMines < this.mineCount) {
@@ -204,7 +204,12 @@ class Game extends Grid {
         }
     }
 
-    // TODO: allow face to change to 😮 when clicking
+    onMouseDown(event) {
+        event.preventDefault();
+
+        this.button.textContent = '😮';
+    }
+
     onMouseUp(event) {
         event.preventDefault();
 
@@ -213,6 +218,8 @@ class Game extends Grid {
             x: parseInt(event.target.dataset.x, 10),
             y: parseInt(event.target.dataset.y, 10)
         };
+
+        this.button.textContent = '😃';
 
         this.action(clicked);
     }
@@ -301,7 +308,7 @@ class Game extends Grid {
             this.flagCount -= 1;
         }
 
-        this.flagCountDisplay.textContent = `left: ${this.flagCount}`;
+        this.flagCountDisplay.textContent = `left:${this.flagCount}`;
 
         // update display
         this.render(nextDisplayState);
@@ -360,7 +367,7 @@ class Game extends Grid {
         timerRef.textContent = format(this.timeInSeconds);
     }
 
-    // compare displayState with mineGrid; if every space in 
+    // compare displayState with mineGrid; if every space in
     // displayState is revealed except for mines, you win!
     checkWinCondition() {
         // search through displayState for unrevealed cells;
@@ -393,7 +400,7 @@ class Game extends Grid {
 
         this.stopTimer();
         this.button.textContent = '😎';
-        this.flagCountDisplay.textContent = `left: 0`;
+        this.flagCountDisplay.textContent = `left:0`;
         this.gameOver = true;
     }
 
