@@ -3,7 +3,8 @@ const UNKNOWN = 9;
 const FLAG = 10;
 const MINE = 11;
 const EXPLODED = 12;
-const SUCCESS = 13;
+const MARKED = 13;
+const SUCCESS = 14;
 
 const format = timeInSeconds => {
     const minutes = String(Math.floor(timeInSeconds / 60));
@@ -14,9 +15,11 @@ const format = timeInSeconds => {
 };
 
 /*
-5. Fix styling
+5. Fix styling for desktop/mobile
 6. Hook up settings button to show difficulty dialog
 7. bug = removing a flag will reveal the cell
+8. save best times based on difficulty
+9. when you lose, show the mines that you flagged correctly (e.g. green background)
 */
 
 class Game extends Grid {
@@ -65,7 +68,8 @@ class Game extends Grid {
             10: 'flag',
             11: 'mine',
             12: 'exploded',
-            13: 'success'
+            13: 'marked,'
+            14: 'success'
         };
 
         // Set up grid that persists state of mines/clues
@@ -257,7 +261,13 @@ class Game extends Grid {
             this.mineGrid.forEach((row, x) => {
                 row.forEach((column, y) => {
                     if (this.mineGrid[x][y] === MINE) {
-                        nextDisplayState[x][y] = MINE;
+                        // if player marked the mine with a flag, show
+                        // they got that one right
+                        if (nextDisplayState[x][y] === FLAG) {
+                            nextDisplayState[x][y] = MARKED;
+                        } else {
+                            nextDisplayState[x][y] = MINE;
+                        }
                     }
                 })
             });
