@@ -1,0 +1,105 @@
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Settings, Help, Etc. | Minesweeper</title>
+
+    <link rel="stylesheet" href="stylesheets/main.css">
+</head>
+
+<body>
+    <main>
+        <h1>Minesweeper Clone</h1>
+
+        <h3>How to Play</h3>
+
+        <p><a href="https://en.wikipedia.org/wiki/Minesweeper_(video_game)"
+                title="Minesweeper_(video_game)">https://en.wikipedia.org/wiki/Minesweeper_(video_game)</a></p>
+
+        <p>Click/tap the face to start a new game.</p>
+
+        <h3>Best Times</h3>
+
+        <section id="high_scores">
+        </section>
+
+        <h3>Difficulty</h3>
+
+        <form action="index.html" method="get">
+            <ul>
+                <li>
+                    <label for="difficulty_easy">
+                        <input id="difficulty_easy" type="radio" name="difficulty" value="easy">
+                        Easy
+                    </label>
+                </li>
+
+                <li>
+                    <label for="difficulty_medium">
+                        <input id="difficulty_medium" type="radio" name="difficulty" value="medium">
+                        Medium
+                    </label>
+                </li>
+
+                <li>
+                    <label for="difficulty_hard">
+                        <input id="difficulty_hard" type="radio" name="difficulty" value="hard">
+                        Hard
+                    </label>
+                </li>
+            </ul>
+
+            <button type="submit">Change</button>
+        </form>
+
+        <hr>
+
+        <a href="index.html" title="Back to game">&larr; Back to game</a>
+    </main>
+
+    <script>
+        const formatTime = timeInSeconds => {
+            const minutes = String(Math.floor(timeInSeconds / 60));
+            const seconds = String(timeInSeconds % 60);
+            const pad = input => input.length === 1 ? `0${input}` : input;
+
+            return `${pad(minutes)}:${pad(seconds)}`;
+        };
+
+        // inline some JS here, because why the hell not?
+        let highScores = JSON.parse(localStorage.getItem('minesweeper:highScores'));
+
+        let template = '<ul>';
+
+        if (highScores.easy.timeInSeconds) {
+            template += `<li>Easy: ${formatTime(highScores.easy.timeInSeconds)} &mdash; ${new Date(highScores.easy.timestamp).toDateString()}</li>`;
+        } else {
+            template += '<li>Easy: not completed!</li>';
+        }
+
+        if (highScores.medium.timeInSeconds) {
+            template += `<li>Medium: ${formatTime(highScores.medium.timeInSeconds)} &mdash; ${new Date(highScores.medium.timestamp).toDateString()}</li>`;
+        } else {
+            template += '<li>Medium: not completed!</li>';
+        }
+
+        if (highScores.hard.timeInSeconds) {
+            template += `<li>Hard: ${formatTime(highScores.hard.timeInSeconds)} &mdash; ${new Date(highScores.hard.timestamp).toDateString()}</li>`;
+        } else {
+            template += '<li>Hard: not completed!</li>';
+        }
+
+        template += '</ul>';
+
+        document.querySelector('#high_scores').innerHTML = template;
+
+        // set difficulty
+        const difficulty = localStorage.getItem('minesweeper:difficulty');
+
+        document.querySelector(`#difficulty_${difficulty}`).checked = true;
+    </script>
+</body>
+
+</html>

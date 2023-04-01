@@ -6,7 +6,7 @@ body {
     height: 100%;
 }
 
-main {
+main#game {
     align-items: end;
     display: flex;
     flex-wrap: wrap;
@@ -16,10 +16,27 @@ main {
     justify-content: space-between;
 }
 
-button {
+ul {
+    list-style-type: none;
+}
+
+form button {
+    margin: 0 0 1rem 2rem;
+    font-size: 1rem;
+}
+
+button#face {
     aspect-ratio: 1;
     font-size: 5rem;
     line-height: 0;
+    border: 0;
+    background: none;
+}
+
+a#settings {
+    font-size: 5rem;
+    line-height: 1;
+    text-decoration: none;
 }
 
 #flags,
