@@ -218,6 +218,12 @@ class Game extends Grid {
         this.touchStartTime = Date.now();
 
         this.touchTimeout = window.setTimeout(event => {
+            // the order in which these methods are called is important
+
+            // on mobile, we want special behavior if user taps & holds on a revealed hint
+            this.revealNeighbors(tapped);
+
+            // this method will return early if the tapped cell is already revealed
             this.action(tapped);
         }, 250);
     }
@@ -230,11 +236,11 @@ class Game extends Grid {
             y: parseInt(event.target.dataset.y, 10)
         };
 
+        // if user lifts finger before the `touchTimeout` (set in `onTouchStart`) fires,
+        // then clear it out to prevent it running
         window.clearTimeout(this.touchTimeout);
 
         const delta = Date.now() - this.touchStartTime;
-
-        console.log(`time delta: ${delta}`);
 
         if (delta < 250) {
             this.toggleFlag(tapped);
@@ -283,30 +289,7 @@ class Game extends Grid {
 
         // o no, u clicked a mine
         if (this.mineGrid[x][y] === MINE) {
-            this.stopTimer();
-
-            // show all mines in the level
-            this.mineGrid.forEach((row, x) => {
-                row.forEach((column, y) => {
-                    if (this.mineGrid[x][y] === MINE) {
-                        // if player marked the mine with a flag, show
-                        // they got that one right
-                        if (nextDisplayState[x][y] === FLAG) {
-                            nextDisplayState[x][y] = MARKED;
-                        } else {
-                            nextDisplayState[x][y] = MINE;
-                        }
-                    }
-                })
-            });
-
-            // highlight the one you clicked
-            nextDisplayState[x][y] = EXPLODED;
-
-            // show a sad face
-            this.button.textContent = '😫';
-
-            this.gameOver = true;
+            this.lose({ x, y }, nextDisplayState);
         } else {
             // TODO: this works by reference
             this.reveal({ x, y }, nextDisplayState);
@@ -354,26 +337,54 @@ class Game extends Grid {
 
     // recursive function that will reveal as much of the game board
     // as possible if player clicks on an empty cell
-    reveal({ x, y }, nextDisplayGrid) {
+    reveal({ x, y }, nextDisplayState) {
 
         // if this space has already been revealed, then stop
-        if (nextDisplayGrid[x][y] !== UNKNOWN) {
+        if (nextDisplayState[x][y] !== UNKNOWN) {
             return;
         }
 
         // reveal the space
-        nextDisplayGrid[x][y] = this.mineGrid[x][y];
+        nextDisplayState[x][y] = this.mineGrid[x][y];
 
         // if this space is a hint, then stop
-        if (nextDisplayGrid[x][y] !== EMPTY) {
+        if (nextDisplayState[x][y] !== EMPTY) {
             return;
         }
 
         // otherwise, since the cell is empty, we check
         // all 8 neighbors for more empty cells
         this.getNeighbors(x, y).forEach(neighbor => {
-            this.reveal(neighbor, nextDisplayGrid);
+            this.reveal(neighbor, nextDisplayState);
         });
+    }
+
+    revealNeighbors({ x, y }) {
+        if (this.gameOver) {
+            return;
+        }
+
+        // don't do anything unless cell contents are a hint
+        if (this.displayState[x][y] >= UNKNOWN) {
+            console.log(`${x}, ${y} = ${this.displayState[x][y]}; is not a hint!`);
+            return;
+        }
+
+        let nextDisplayState = this.displayStateCopy();
+
+        this.getNeighbors(x, y).forEach(neighbor => {
+            // this method will return early if already a hint
+            this.reveal(neighbor, nextDisplayState);
+
+            // check if any of the immediate neighbors is a mine
+            // extract the "lose" logic and call it here
+            if (nextDisplayState[neighbor.x][neighbor.y] === MINE) {
+                this.lose({ x: neighbor.x, y: neighbor.y }, nextDisplayState);
+            }
+        });
+
+        // update display
+        this.render(nextDisplayState);
     }
 
     startTimer() {
@@ -402,6 +413,33 @@ class Game extends Grid {
         this.timeInSeconds = 0;
         const timerRef = document.querySelector('#timer');
         timerRef.textContent = format(this.timeInSeconds);
+    }
+
+    lose({ x, y }, nextDisplayState) {
+        this.stopTimer();
+
+        // show all mines in the level
+        for (let x = 0; x < this.columns; x += 1) {
+            for (let y = 0; y < this.rows; y += 1) {
+                if (this.mineGrid[x][y] === MINE) {
+                    // if player marked the mine with a flag, show
+                    // they got that one right
+                    if (nextDisplayState[x][y] === FLAG) {
+                        nextDisplayState[x][y] = MARKED;
+                    } else {
+                        nextDisplayState[x][y] = MINE;
+                    }
+                }
+            }
+        }
+
+        // highlight the one you clicked
+        nextDisplayState[x][y] = EXPLODED;
+
+        // show a sad face
+        this.button.textContent = '😫';
+
+        this.gameOver = true;
     }
 
     // compare displayState with mineGrid; if every space in
