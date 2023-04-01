@@ -22,8 +22,8 @@ button {
     line-height: 0;
 }
 
-.flags,
-.timer {
+#flags,
+#timer {
     font-size: 3rem;
 }
 

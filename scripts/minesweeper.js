@@ -6,6 +6,10 @@ const EXPLODED = 12;
 const MARKED = 13;
 const SUCCESS = 14;
 
+// https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
+const MAIN_MOUSE_BUTTON = 0;
+const SECONDARY_MOUSE_BUTTON = 2;
+
 const format = timeInSeconds => {
     const minutes = String(Math.floor(timeInSeconds / 60));
     const seconds = String(timeInSeconds % 60);
@@ -16,10 +20,8 @@ const format = timeInSeconds => {
 
 /*
 5. Fix styling for desktop/mobile
-6. Hook up settings button to show difficulty dialog
-7. bug = removing a flag will reveal the cell
+6. Hook up settings button to go to help page
 8. save best times based on difficulty
-9. when you lose, show the mines that you flagged correctly (e.g. green background)
 */
 
 class Game extends Grid {
@@ -29,8 +31,9 @@ class Game extends Grid {
         let mineCount;
 
         const urlParams = new URLSearchParams(window.location.search);
+        const difficulty = urlParams.get('difficulty') || 'easy';
 
-        switch (urlParams.get('difficulty')) {
+        switch (difficulty) {
             case 'medium':
                 rows = 16;
                 columns = 16;
@@ -41,7 +44,7 @@ class Game extends Grid {
                 columns = 16;
                 mineCount = 99;
                 break;
-            default:
+            case 'easy':
                 rows = 10;
                 columns = 10;
                 mineCount = 10;
@@ -49,7 +52,9 @@ class Game extends Grid {
 
         super(rows, columns);
 
+        // can't access `this` until after calling parent constructor
         this.mineCount = mineCount;
+        this.difficulty = difficulty;
 
         // our grid contains simple integers to represent game objects;
         // this map translates the numbers to a string, that can then be used as
@@ -68,7 +73,7 @@ class Game extends Grid {
             10: 'flag',
             11: 'mine',
             12: 'exploded',
-            13: 'marked,'
+            13: 'marked',
             14: 'success'
         };
 
@@ -84,18 +89,20 @@ class Game extends Grid {
         grid.addEventListener('mousedown', this.onMouseDown.bind(this));
         grid.addEventListener('mouseup', this.onMouseUp.bind(this));
 
-        // intercept right clicks within the game board, but not the whole window
-        grid.addEventListener('contextmenu', this.onRightClick.bind(this));
+        // prevent right-click context menu on the game board
+        grid.addEventListener('contextmenu', e => e.preventDefault());
 
         // store ref to the reset button (also changes content based on player actions)
-        this.button = document.querySelector('button.face');
+        this.button = document.querySelector('#face');
         this.button.addEventListener('click', this.reset.bind(this));
 
         // store ref to the flag counter
-        this.flagCountDisplay = document.querySelector('.flags');
+        this.flagCountDisplay = document.querySelector('#flags');
 
         // run any logic tests
         this.test();
+
+        this.initHighScores();
 
         // set up initial game state
         this.reset();
@@ -152,6 +159,16 @@ class Game extends Grid {
 
         this.stopTimer();
         this.resetTimer();
+    }
+
+    initHighScores() {
+        if (!localStorage.getItem('minesweeper:highScores')) {
+            localStorage.setItem('minesweeper:highScores', JSON.stringify({
+                'easy': { timeInSeconds: null, timestamp: null },
+                'medium': { timeInSeconds: null, timestamp: null },
+                'hard': { timeInSeconds: null, timestamp: null }
+            }));
+        }
     }
 
     getNeighbors(x, y) {
@@ -211,7 +228,9 @@ class Game extends Grid {
     onMouseDown(event) {
         event.preventDefault();
 
-        this.button.textContent = '😮';
+        if (event.button === MAIN_MOUSE_BUTTON) {
+            this.button.textContent = '😮';
+        }
     }
 
     onMouseUp(event) {
@@ -223,20 +242,13 @@ class Game extends Grid {
             y: parseInt(event.target.dataset.y, 10)
         };
 
-        this.button.textContent = '😃';
+        if (event.button === MAIN_MOUSE_BUTTON) {
+            this.button.textContent = '😃';
 
-        this.action(clicked);
-    }
-
-    onRightClick(event) {
-        event.preventDefault();
-
-        const clicked = {
-            x: parseInt(event.target.dataset.x, 10),
-            y: parseInt(event.target.dataset.y, 10)
-        };
-
-        this.toggleFlag(clicked);
+            this.action(clicked);
+        } else {
+            this.toggleFlag(clicked);
+        }
     }
 
     action({ x, y }) {
@@ -355,7 +367,7 @@ class Game extends Grid {
         }
 
         this.timeInSeconds = 0;
-        const timerRef = document.querySelector('.timer');
+        const timerRef = document.querySelector('#timer');
 
         this.timerInterval = window.setInterval(() => {
             this.timeInSeconds += 1;
@@ -373,7 +385,7 @@ class Game extends Grid {
 
     resetTimer() {
         this.timeInSeconds = 0;
-        const timerRef = document.querySelector('.timer');
+        const timerRef = document.querySelector('#timer');
         timerRef.textContent = format(this.timeInSeconds);
     }
 
@@ -412,6 +424,17 @@ class Game extends Grid {
         this.button.textContent = '😎';
         this.flagCountDisplay.textContent = `left:0`;
         this.gameOver = true;
+
+        // save high score/fastest time
+        let highScores = JSON.parse(localStorage.getItem('minesweeper:highScores'));
+
+        let currentBest = highScores[this.difficulty];
+
+        if (!currentBest.timeInSeconds || this.timeInSeconds <= currentBest.timeInSeconds) {
+            highScores[this.difficulty] = { timeInSeconds: this.timeInSeconds, timestamp: Date.now() };
+
+            localStorage.setItem('minesweeper:highScores', JSON.stringify(highScores));
+        }
     }
 
     test() {
