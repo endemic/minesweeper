@@ -11,6 +11,7 @@
     const UNKNOWN = 9;
     const FLAG = 10;
     const MINE = 11;
+    const EXPLODED = 12;
 
     const format = timeInSeconds => {
       const minutes = String(Math.floor(timeInSeconds / 60));
@@ -22,11 +23,8 @@
 
     /*
     TODO
-    1. make flag have grey background
     2. don't allow additional input if player loses
-    3. make clicked mine have red background
-    4. Add emoji face button to reset game
-    5. Add timer that starts when first cell is revealed
+    4. Add counter for placed flags
     */
 
     class Game {
@@ -46,7 +44,8 @@
           8: 'eight',
           9: 'unknown',
           10: 'flag',
-          11: 'mine'
+          11: 'mine',
+          12: 'exploded'
         };
 
         this.rowCount = 10;
@@ -212,6 +211,9 @@
             }
           });
 
+          // highlight the one you clicked
+          nextDisplayGrid[clickedIndex] = EXPLODED;
+
           // show a sad face
           this.buttonRef.textContent = '😫';
         } else {
@@ -363,8 +365,10 @@
 
 <body>
   <main class="game">
-    <section class="timer">00:00</section>
+    <section class="flags">10</section>
     <button class="face">😃</button>
+    <section class="timer">00:00</section>
+
     <section class="board"></section>
   </main>
 </body>

@@ -4,6 +4,23 @@ body {
     padding: 0;
 }
 
+.game {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+}
+
+.face {
+    font-size: 5rem;
+    aspect-ratio: 1;
+    line-height: 0;
+}
+
+.flags,
+.timer {
+    font-size: 3rem;
+}
+
 .board {
     display: grid;
     aspect-ratio: 1;
@@ -16,16 +33,8 @@ body {
 
     /* prevents scroll/drag */
     touch-action: none;
-}
 
-.scoreboard {
-    border: 1px solid white;
-    color: white;
-    font-family: monospace;
-    font-weight: bold;
-    left: 0;
-    position: absolute;
-    top: 0;
+    flex-basis: 100%;
 }
 
 .board>div {
@@ -41,7 +50,6 @@ body {
 }
 
 .unknown {
-
     background: url('../images/unknown.png') center/100% no-repeat;
 }
 
@@ -67,4 +75,8 @@ body {
 
 .flag {
     background: url('../images/flag.png') center/100% no-repeat;
+}
+
+.exploded {
+    background: url('../images/mine.png') red center/100% no-repeat;
 }
