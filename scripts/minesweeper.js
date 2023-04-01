@@ -17,14 +17,9 @@ const format = timeInSeconds => {
 TODO
 3. watch hash change for difficulty select (https://caniuse.com/?search=hash)
     -> dunno if this'll work, as the class constructor would have to be re-invoked
-4. implement touch control
-    -> change "click" to "mouseup" to differentiate between touch/mouse
+    -> settings button shows overlay with links to re-load the page w/ appropriate "difficulty" query param
 5. Fix styling
 6. Hook up settings button to show difficulty dialog
-
-Mobile control ideas:
-  tap for flag, long tap to reveal
-  pinch-to-zoom? tap and drag to show more of a larger board
 */
 
 class Game extends Grid {
