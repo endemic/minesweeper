@@ -8,11 +8,13 @@ body {
 main {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-around;
+    justify-content: space-between;
     align-items: center;
+    gap: 1rem 0;
+    /* row-gap column-gap*/
 }
 
-.face {
+button {
     font-size: 5rem;
     aspect-ratio: 1;
     line-height: 0;
@@ -28,6 +30,9 @@ main {
     /* prevents scroll/drag */
     touch-action: none;
     flex-basis: 100%;
+    border: 1px solid black;
+    border-bottom: 0;
+    border-right: 0;
 }
 
 #grid>div {
