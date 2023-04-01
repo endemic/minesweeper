@@ -158,10 +158,13 @@
       // TODO: change this to mouseUp to allow face to change when clicking
       // 😮
       onClick(event) {
+        // TODO: clicking & dragging can produce NaN here
         const clicked = {
           x: parseInt(event.target.dataset.x, 10),
           y: parseInt(event.target.dataset.y, 10)
         };
+
+        console.log(`clicked (${clicked.x},${clicked.y})`);
 
         this.startTimer();
 

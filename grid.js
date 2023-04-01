@@ -9,40 +9,37 @@ class Grid {
         this.columns = columns;
 
         // set up 2D array to use as data store for game logic & display
-        this.displayState = Array(rows).fill().map(_ => Array(columns).fill());
+        this.displayState = Array(columns).fill().map(_ => Array(rows).fill());
 
-        // set up DOM references
-        this.gridRef = Array(rows).fill().map(_ => Array(columns).fill());
+        // set up 2D array to store references to DOM nodes
+        this.gridRef = Array(columns).fill().map(_ => Array(rows).fill());
 
         let boardRef = document.querySelector('#grid');
 
-        this.displayState.forEach((row, x) => {
-            row.forEach((column, y) => {
+        // create the grid in our HTML page
+        for (let y = 0; y < rows; y += 1) {
+            for (let x = 0; x < columns; x += 1) {
                 // create a DOM node for each element in the backing array
                 let node = document.createElement('div');
 
                 // For games that use the mouse, set `data-` attributes
                 // to easily reference the clicked node
-                // NOTE: this is reversed, so we can manipulate our backing
-                // 2D array in a more natural way (x,y) and have it displayed as expected
-                node.dataset.x = y;
-                node.dataset.y = x;
+                node.dataset.x = x;
+                node.dataset.y = y;
 
                 // save a reference to the node, so it can be quickly updated later
-                // NOTE: this is reversed, so we can manipulate our backing
-                // 2D array in a more natural way (x,y) and have it displayed as expected
-                this.gridRef[y][x] = node;
+                this.gridRef[x][y] = node;
 
                 // add the node to the actual page
                 boardRef.appendChild(node);
-            });
-        });
+            }
+        }
     }
 
     render(nextDisplayState) {
         // enumerate through the current/new display state arrays to update the changed values
-        this.displayState.forEach((row, x) => {
-            row.forEach((column, y) => {
+        this.displayState.forEach((column, x) => {
+            column.forEach((row, y) => {
                 if (this.displayState[x][y] === nextDisplayState[x][y]) {
                     return;
                 }
@@ -56,19 +53,20 @@ class Grid {
         this.displayState = nextDisplayState;
     }
 
-    // Returns a new object with the same structure/values as the current display state
+    // Returns a deep copy of the current display state
     displayStateCopy() {
         return JSON.parse(JSON.stringify(this.displayState));
     }
 
+    // helper method to quickly fill a 2D array
     fill(grid, value) {
         return grid.map(row => row.fill(value));
     }
 
     randomPoint() {
         return {
-            x: Math.floor(Math.random() * this.rows),
-            y: Math.floor(Math.random() * this.columns)
+            x: Math.floor(Math.random() * this.columns),
+            y: Math.floor(Math.random() * this.rows)
         };
     }
 }
