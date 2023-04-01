@@ -27,13 +27,23 @@
     TODO
     2. don't allow additional input if player loses
     4. Add counter for placed flags
-    5. When game is won, place flags on any un-marked mines
+    5. ~~When game is won, place flags on any un-marked mines~~
+    7. difficulty select (expert: 16x30 	99mines)
+    8. dynamically set the css of the grid so that all the cells are equal size
+    
+    Mobile control ideas:
+      tap for flag, long tap to reveal
+      pinch-to-zoom? tap and drag to show more of a larger board
     */
 
     class Game extends Grid {
       constructor() {
-        let rows = 16;
-        let columns = 16;
+        // let rows = 30;
+        // let columns = 16;
+        // let rows = 16;
+        // let columns = 16;
+        let rows = 10;
+        let columns = 10;
 
         super(rows, columns);
 
@@ -57,7 +67,7 @@
         };
 
         // Set up grid that persists state of mines/clues
-        this.mineGrid = Array(rows).fill().map(_ => Array(columns).fill());
+        this.mineGrid = Array(columns).fill().map(_ => Array(rows).fill());
 
         // bind context variable to the current Game() object
         // for each of these global handlers/interval
@@ -92,10 +102,14 @@
         // reset state of mines
         this.mineGrid = this.fill(this.mineGrid, EMPTY);
 
-        // TODO: hardcoded to easy mode
-        // let mineCount = 10;
+        // easy
+        let mineCount = 10;
 
-        let mineCount = 40;
+        // intermediate
+        // let mineCount = 40;
+
+        // expert
+        // let mineCount = 99;
         while (mineCount > 1) {
           let point = this.randomPoint();
 
@@ -106,19 +120,23 @@
         }
 
         // Set up hints by checking the 8 adjacent spaces
-        this.mineGrid.forEach((row, x) => {
-          row.forEach((column, y) => {
+        for (let y = 0; y < this.rows; y += 1) {
+          for (let x = 0; x < this.columns; x += 1) {
+
             // Don't overwrite mines
             if (this.mineGrid[x][y] === MINE) {
-              return;
+              continue;
             }
 
             // Find the number of mines contained in neighboring cells
             let hint = this.getNeighbors(x, y).filter(point => this.mineGrid[point.x][point.y] === MINE).length;
 
             this.mineGrid[x][y] = hint;
-          })
-        })
+          }
+        }
+
+        // debug -- display contents of mineGrid (mines/hints)
+        // this.render(this.mineGrid);
 
         // Reset the button to a happy face!
         this.button.textContent = '😃';
@@ -128,7 +146,7 @@
       }
 
       getNeighbors(x, y) {
-        const withinBounds = point => point.x >= 0 && point.x < this.rows && point.y >= 0 && point.y < this.columns;
+        const withinBounds = point => point.x >= 0 && point.x < this.columns && point.y >= 0 && point.y < this.rows;
 
         return [
           // previous row
@@ -163,8 +181,6 @@
           x: parseInt(event.target.dataset.x, 10),
           y: parseInt(event.target.dataset.y, 10)
         };
-
-        console.log(`clicked (${clicked.x},${clicked.y})`);
 
         this.startTimer();
 
@@ -237,6 +253,7 @@
       // recursive function that will reveal as much of the game board
       // as possible if player clicks on an empty cell
       reveal(point, nextDisplayGrid) {
+
         // if this space has already been revealed, then stop
         if (nextDisplayGrid[point.x][point.y] !== UNKNOWN) {
           return;
@@ -290,25 +307,21 @@
       // displayState is revealed except for mines, you win!
       checkWinCondition() {
         // search through displayState for unrevealed cells;
-        // if the cell is unrevealed, and _doesn't_ have a mine
-        // in it, then the player hasn't won yet
-        const won = this.displayState.every((row, x) => {
-          return row.every((column, y) => {
+        for (let y = 0; y < this.rows; y += 1) {
+          for (let x = 0; x < this.columns; x += 1) {
             const value = this.displayState[x][y];
 
+            // if the cell is unrevealed, and _doesn't_ have a mine
+            // in it, then the player hasn't won yet
             if ((value === UNKNOWN || value === FLAG) && this.mineGrid[x][y] !== MINE) {
-              console.log(`space (${x}, ${y}) has not yet been revealed`);
-              return false;
+              return;
             }
-
-            return true;
-          })
-        });
-
-        if (won) {
-          this.stopTimer();
-          this.button.textContent = '😎';
+          }
         }
+
+        // if you got here, you win!
+        this.stopTimer();
+        this.button.textContent = '😎';
       }
 
       test() {
