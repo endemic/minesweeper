@@ -1,0 +1,60 @@
+html,
+body {
+    margin: 0;
+    padding: 0;
+}
+
+.board {
+    display: grid;
+    aspect-ratio: 1;
+    width: 50%;
+    /* The repeat() notation accepts 2 arguments: the first represents the
+    number of times the defined tracks should repeat, and the second is 
+    the track definition. */
+    grid-template-rows: repeat(10, auto);
+    grid-template-columns: repeat(10, auto);
+
+    /* prevents scroll/drag */
+    touch-action: none;
+}
+
+.scoreboard {
+    border: 1px solid white;
+    color: white;
+    font-family: monospace;
+    font-weight: bold;
+    left: 0;
+    position: absolute;
+    top: 0;
+}
+
+.board>div {
+    border: 1px solid black;
+    border-top: 0;
+    border-left: 0;
+    box-sizing: border-box;
+}
+
+.empty {
+    background-color: white;
+}
+
+.unknown {
+    background-color: lightgray;
+}
+
+.one {
+    background-color: blue;
+}
+
+.two {
+    background-color: green;
+}
+
+.three {
+    background-color: red;
+}
+
+.mine {
+    background-color: black;
+}
