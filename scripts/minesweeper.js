@@ -391,10 +391,12 @@ class Game extends Grid {
             }
         });
 
-        this.checkWinCondition();
-
         // update display
         this.render(nextDisplayState);
+
+        // this needs to run _after_ the display is updated, as we check
+        // the status of the most recent move
+        this.checkWinCondition();
     }
 
     startTimer() {
