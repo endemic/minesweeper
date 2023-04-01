@@ -2,14 +2,14 @@ html,
 body {
     margin: 0;
     padding: 0;
+    font-family: monospace;
 }
 
-.game {
+main {
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-between;
-    margin: auto;
-    width: 50%;
+    justify-content: space-around;
+    align-items: center;
 }
 
 .face {
@@ -24,11 +24,9 @@ body {
 }
 
 #grid {
-    width: 50%;
-
+    width: 100%;
     /* prevents scroll/drag */
     touch-action: none;
-
     flex-basis: 100%;
 }
 
@@ -78,4 +76,12 @@ body {
 
 .exploded {
     background: url('../images/mine.png') red center/100% no-repeat;
+}
+
+/* desktop styles */
+@media (min-width: 768px) {
+    main {
+        margin: auto;
+        width: 75%;
+    }
 }
