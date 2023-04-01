@@ -57,6 +57,10 @@ body {
     background: url('../images/three.png') center/100% no-repeat;
 }
 
+.four {
+    background: url('../images/four.png') center/100% no-repeat;
+}
+
 .mine {
     background: url('../images/mine.png') center/100% no-repeat;
 }
