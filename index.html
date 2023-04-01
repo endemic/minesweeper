@@ -37,7 +37,13 @@
   </main>
 
   <script>
-    new Game()
+    new Game();
+
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker
+        .register('scripts/service_worker.js')
+        .then(() => { console.log('Service Worker Registered'); });
+    }
   </script>
 </body>
 
