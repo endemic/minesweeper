@@ -75,18 +75,15 @@
           }
         }
 
-        // Set up clues by checking the 8 adjacent spaces
+        // Set up hints by checking the 8 adjacent spaces
         for (let i = 0; i < this.mineGrid.length; i += 1) {
+          // don't overwrite mines with hints
           if (this.mineGrid[i] === 11) {
             continue;
           }
 
-          let hintValue = this.getNeighbors(i).reduce((accumulator, index) => {
-            if (this.mineGrid[index] === 11) {
-              accumulator += 1;
-            }
-            return accumulator;
-          }, 0);
+          // Find the number of mines contained in neighboring cells
+          let hintValue = this.getNeighbors(i).filter(i => this.mineGrid[i] === 11).length;
 
           this.mineGrid[i] = hintValue;
         }
@@ -98,19 +95,44 @@
 
         // DEBUG -- immediately display mine state
         this.render([...this.mineGrid]);
+
+        // run any logic tests
+        this.test();
       }
 
       getNeighbors(index) {
-        return [
+        const calcRow = i => Math.floor(i / this.columnCount);
+
+        // since we're using a 1D array, it's possible that a naive neighbor calculation
+        // would wrap to the other side of the board (e.g. a cell on the left-most column
+        // would have a "neighbor" in the right-most column). These helper functions
+        // ensure that wrapping doesn't occur. This could also be solved by using a 2D
+        // array for the board grid instead.
+        const inPrevRow = i => calcRow(i) === calcRow(index - this.columnCount);
+        const inSameRow = i => calcRow(i) === calcRow(index);
+        const inNextRow = i => calcRow(i) === calcRow(index + this.columnCount);
+
+        // ensure no negative or greater than array length indices
+        const withinBounds = i => i >= 0 && i < this.rowCount * this.columnCount;
+
+        let prevRow = [
           index - this.columnCount - 1,
           index - this.columnCount,
-          index - this.columnCount + 1,
+          index - this.columnCount + 1
+        ].filter(withinBounds).filter(inPrevRow);
+
+        let sameRow = [
           index - 1,
-          index + 1,
+          index + 1
+        ].filter(withinBounds).filter(inSameRow);
+
+        let nextRow = [
           index + this.columnCount - 1,
           index + this.columnCount,
           index + this.columnCount + 1
-        ];
+        ].filter(withinBounds).filter(inNextRow);
+
+        return [].concat(prevRow, sameRow, nextRow);
       }
 
       onTouchEnd(e) {
@@ -140,13 +162,6 @@
         }
       }
 
-      update() {
-        let nextState = [...this.displayGrid]; // shallow clone
-
-        // update display
-        this.render(nextState);
-      }
-
       render(nextDisplayGrid) {
         // get diff between current state/next state
         let diffIndices = this.displayGrid.reduce((accumulator, currentValue, index) => {
@@ -162,6 +177,18 @@
 
         // set the next state as current state
         this.displayGrid = nextDisplayGrid;
+      }
+
+      test() {
+        const previousValues = [this.columnCount, this.rowCount];
+        this.columnCount = 10;
+        this.rowCount = 10;
+
+        console.assert(this.getNeighbors(0).join() === '1,10,11', `getNeighbors(0) = ${this.getNeighbors(0)}`);
+        console.assert(this.getNeighbors(9).join() === '8,18,19', `getNeighbors(9) = ${this.getNeighbors(9)}`);
+        console.assert(this.getNeighbors(99).join() === '88,89,98', `getNeighbors(99) = ${this.getNeighbors(99)}`);
+
+        [this.columnCount, this.rowCount] = previousValues;
       }
     };
 
