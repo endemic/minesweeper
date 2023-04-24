@@ -54,8 +54,7 @@ button#settings {
     border-right: 0;
     border: 1px solid black;
     flex-basis: 100%;
-    /* `touch-action` prevents scroll/drag */
-    touch-action: none;
+    user-select: none;
     width: 100%;
 }
 

@@ -18,12 +18,6 @@ const format = timeInSeconds => {
     return `${pad(minutes)}:${pad(seconds)}`;
 };
 
-/*
-TODO
-- [x] add service worker for offline access
-- [x] add feature to reveal all unmarked neighbors when tap & hold on mobile
-*/
-
 class Game extends Grid {
     constructor() {
         let rows;
@@ -91,6 +85,7 @@ class Game extends Grid {
         grid.addEventListener('touchend', this.onTouchEnd.bind(this));
         grid.addEventListener('mousedown', this.onMouseDown.bind(this));
         grid.addEventListener('mouseup', this.onMouseUp.bind(this));
+        grid.addEventListener('touchmove', this.onTouchMove.bind(this));
 
         // prevent right-click context menu on the game board
         grid.addEventListener('contextmenu', e => e.preventDefault());
@@ -213,7 +208,15 @@ class Game extends Grid {
     }
 
     onTouchStart(event) {
-        event.preventDefault();
+        if (event.touches.length > 1) {
+            // user is trying to use multi-touch; cancel any game input
+            this.cancelTouch = true;
+
+            // cancel any pending game action
+            window.clearTimeout(this.touchTimeout);
+
+            return;
+        }
 
         const tapped = {
             x: parseInt(event.target.dataset.x, 10),
@@ -223,7 +226,7 @@ class Game extends Grid {
         this.touchStartTime = Date.now();
 
         this.touchTimeout = window.setTimeout(event => {
-            // the order in which these methods are called is important
+            // NOTE: these next two methods are order dependent
 
             // on mobile, we want special behavior if user taps & holds on a revealed hint
             this.revealNeighbors(tapped);
@@ -233,8 +236,26 @@ class Game extends Grid {
         }, 250);
     }
 
+    onTouchMove(event) {
+        // cancel any pending game action
+        // user is probably trying to pan/scroll
+        window.clearTimeout(this.touchTimeout);
+
+        this.cancelTouch = true;
+    };
+
     onTouchEnd(event) {
         event.preventDefault();
+
+        // Player lifted their finger; allow touches with next interaction
+        if (this.cancelTouch && event.touches.length === 0) {
+            this.cancelTouch = false;
+            return;
+        }
+
+        if (this.cancelTouch) {
+            return;
+        }
 
         const tapped = {
             x: parseInt(event.target.dataset.x, 10),
