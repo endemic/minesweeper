@@ -208,6 +208,10 @@ class Game extends Grid {
     }
 
     onTouchStart(event) {
+        if (this.gameOver) {
+            return;
+        }
+
         if (event.touches.length > 1) {
             // user is trying to use multi-touch; cancel any game input
             this.cancelTouch = true;
@@ -223,6 +227,8 @@ class Game extends Grid {
             y: parseInt(event.target.dataset.y, 10)
         };
 
+        this.button.textContent = '😮';
+
         this.touchStartTime = Date.now();
 
         this.touchTimeout = window.setTimeout(event => {
@@ -237,6 +243,10 @@ class Game extends Grid {
     }
 
     onTouchMove(event) {
+        if (this.gameOver) {
+            return;
+        }
+
         // cancel any pending game action
         // user is probably trying to pan/scroll
         window.clearTimeout(this.touchTimeout);
@@ -247,6 +257,10 @@ class Game extends Grid {
     onTouchEnd(event) {
         event.preventDefault();
 
+        if (this.gameOver) {
+            return;
+        }
+
         // Player lifted their finger; allow touches with next interaction
         if (this.cancelTouch && event.touches.length === 0) {
             this.cancelTouch = false;
@@ -256,6 +270,8 @@ class Game extends Grid {
         if (this.cancelTouch) {
             return;
         }
+
+        this.button.textContent = '😃';
 
         const tapped = {
             x: parseInt(event.target.dataset.x, 10),
@@ -276,6 +292,10 @@ class Game extends Grid {
     onMouseDown(event) {
         event.preventDefault();
 
+        if (this.gameOver) {
+            return;
+        }
+
         if (event.button === MAIN_MOUSE_BUTTON) {
             this.button.textContent = '😮';
         }
@@ -283,6 +303,10 @@ class Game extends Grid {
 
     onMouseUp(event) {
         event.preventDefault();
+
+        if (this.gameOver) {
+            return;
+        }
 
         // TODO: clicking & dragging can produce NaN here
         const clicked = {
@@ -300,10 +324,6 @@ class Game extends Grid {
     }
 
     action({ x, y }) {
-        if (this.gameOver) {
-            return;
-        }
-
         this.startTimer();
 
         // don't do anything if cell contents are revealed
@@ -329,10 +349,6 @@ class Game extends Grid {
     }
 
     toggleFlag({ x, y }) {
-        if (this.gameOver) {
-            return;
-        }
-
         // don't do anything if cell contents are revealed
         if (this.displayState[x][y] !== UNKNOWN &&
             this.displayState[x][y] !== FLAG) {
