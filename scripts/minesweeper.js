@@ -208,6 +208,8 @@ class Game extends Grid {
     }
 
     onTouchStart(event) {
+        event.preventDefault();
+
         if (this.gameOver) {
             return;
         }
@@ -243,6 +245,8 @@ class Game extends Grid {
     }
 
     onTouchMove(event) {
+        event.preventDefault();
+
         if (this.gameOver) {
             return;
         }
@@ -445,6 +449,13 @@ class Game extends Grid {
         const timerRef = document.querySelector('#timer');
 
         this.timerInterval = window.setInterval(() => {
+            // attempt to fix an issue in Mobile Safari
+            // where interval is not actually cleared
+            if (this.gameOver) {
+                this.stopTimer();
+                return;
+            }
+
             this.timeInSeconds += 1;
             timerRef.textContent = format(this.timeInSeconds);
         }, 1000);
@@ -507,25 +518,24 @@ class Game extends Grid {
             }
         }
 
-        // if you got here, you win!
+        // if you got here, you won!
+        this.gameOver = true;
 
         let nextDisplayState = this.displayStateCopy();
 
         // highlight all the correctly avoided mines in the level
-        this.mineGrid.forEach((row, x) => {
-            row.forEach((column, y) => {
+        for (let y = 0; y < this.rows; y += 1) {
+            for (let x = 0; x < this.columns; x += 1) {
                 if (this.mineGrid[x][y] === MINE) {
                     nextDisplayState[x][y] = SUCCESS;
                 }
-            })
-        });
+            }
+        }
 
         this.render(nextDisplayState);
 
-        this.stopTimer();
         this.button.textContent = '😎';
         this.flagCountDisplay.textContent = `left:0`;
-        this.gameOver = true;
 
         this.saveHighScore();
     }
