@@ -1,10 +1,10 @@
-const EMPTY = 0;
-const UNKNOWN = 9;
-const FLAG = 10;
-const MINE = 11;
-const EXPLODED = 12;
-const MARKED = 13;
-const SUCCESS = 14;
+const EMPTY = 'empty';
+const UNKNOWN = 'unknown';
+const FLAG = 'flag';
+const MINE = 'mine';
+const EXPLODED = 'exploded';
+const MARKED = 'marked';
+const SUCCESS = 'success';
 
 // https://developer.mozilla.org/en-US/docs/Web/API/MouseEvent/button
 const MAIN_MOUSE_BUTTON = 0;
@@ -53,27 +53,6 @@ class Game extends Grid {
         this.mineCount = mineCount;
         this.difficulty = difficulty;
 
-        // our grid contains simple integers to represent game objects;
-        // this map translates the numbers to a string, that can then be used as
-        // human-readable reference or CSS class (for display purposes)
-        this.cssClassMap = {
-            0: 'empty',
-            1: 'one',
-            2: 'two',
-            3: 'three',
-            4: 'four',
-            5: 'five',
-            6: 'six',
-            7: 'seven',
-            8: 'eight',
-            9: 'unknown',
-            10: 'flag',
-            11: 'mine',
-            12: 'exploded',
-            13: 'marked',
-            14: 'success'
-        };
-
         // Set up grid that persists state of mines/clues
         this.mineGrid = Array(columns).fill().map(_ => Array(rows).fill());
 
@@ -114,13 +93,13 @@ class Game extends Grid {
     reset() {
         this.gameOver = false;
 
-        let nextDisplayState = this.displayStateCopy();
+        let nextState = this.currentState;
 
         // set initial background
-        nextDisplayState = this.fill(nextDisplayState, UNKNOWN);
+        nextState = this.fill(nextState, UNKNOWN);
 
         // do initial draw
-        this.render(nextDisplayState);
+        this.render(nextState);
 
         // reset state of mines
         this.mineGrid = this.fill(this.mineGrid, EMPTY);
@@ -148,9 +127,11 @@ class Game extends Grid {
                 }
 
                 // Find the number of mines contained in neighboring cells
-                let hint = this.getNeighbors(x, y).filter(({ x, y }) => this.mineGrid[x][y] === MINE).length;
+                let hintValue = this.getNeighbors(x, y).filter(({ x, y }) => this.mineGrid[x][y] === MINE).length;
+                // convert the number to a string value
+                let hintString = ['empty', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
-                this.mineGrid[x][y] = hint;
+                this.mineGrid[x][y] = hintString[hintValue];
             }
         }
 
@@ -188,9 +169,6 @@ class Game extends Grid {
     }
 
     getNeighbors(x, y) {
-        // function to ensure that (x, y) coords are within our data structure
-        const withinBounds = ({ x, y }) => x >= 0 && x < this.columns && y >= 0 && y < this.rows;
-
         return [
             // previous row
             { x: x - 1, y: y - 1 },
@@ -204,7 +182,7 @@ class Game extends Grid {
             { x: x - 1, y: y + 1 },
             { x: x, y: y + 1 },
             { x: x + 1, y: y + 1 },
-        ].filter(withinBounds);
+        ].filter(point => this.withinBounds(point));
     }
 
     onTouchStart(event) {
@@ -331,22 +309,22 @@ class Game extends Grid {
         this.startTimer();
 
         // don't do anything if cell contents are revealed
-        if (this.displayState[x][y] !== UNKNOWN) {
+        if (this.state[x][y] !== UNKNOWN) {
             return;
         }
 
-        let nextDisplayState = this.displayStateCopy();
+        let nextState = this.currentState;
 
         // o no, u clicked a mine
         if (this.mineGrid[x][y] === MINE) {
-            this.lose({ x, y }, nextDisplayState);
+            this.lose({ x, y }, nextState);
         } else {
             // TODO: this works by reference
-            this.reveal({ x, y }, nextDisplayState);
+            this.reveal({ x, y }, nextState);
         }
 
         // update display
-        this.render(nextDisplayState);
+        this.render(nextState);
 
         // did we win?
         this.checkWinCondition();
@@ -354,16 +332,16 @@ class Game extends Grid {
 
     toggleFlag({ x, y }) {
         // don't do anything if cell contents are revealed
-        if (this.displayState[x][y] !== UNKNOWN &&
-            this.displayState[x][y] !== FLAG) {
+        if (this.state[x][y] !== UNKNOWN &&
+            this.state[x][y] !== FLAG) {
             return;
         }
 
-        let nextDisplayState = this.displayStateCopy();
+        let nextState = this.currentState;
 
         // toggle flag in this cell
-        if (this.displayState[x][y] === FLAG) {
-            nextDisplayState[x][y] = UNKNOWN;
+        if (this.state[x][y] === FLAG) {
+            nextState[x][y] = UNKNOWN;
             this.flagCount += 1;
         } else {
             // You placed too many flags!
@@ -371,37 +349,37 @@ class Game extends Grid {
                 return;
             }
 
-            nextDisplayState[x][y] = FLAG;
+            nextState[x][y] = FLAG;
             this.flagCount -= 1;
         }
 
         this.flagCountDisplay.textContent = `left:${this.flagCount}`;
 
         // update display
-        this.render(nextDisplayState);
+        this.render(nextState);
     }
 
     // recursive function that will reveal as much of the game board
     // as possible if player clicks on an empty cell
-    reveal({ x, y }, nextDisplayState) {
+    reveal({ x, y }, nextState) {
 
         // if this space has already been revealed, then stop
-        if (nextDisplayState[x][y] !== UNKNOWN) {
+        if (nextState[x][y] !== UNKNOWN) {
             return;
         }
 
         // reveal the space
-        nextDisplayState[x][y] = this.mineGrid[x][y];
+        nextState[x][y] = this.mineGrid[x][y];
 
         // if this space is a hint, then stop
-        if (nextDisplayState[x][y] !== EMPTY) {
+        if (nextState[x][y] !== EMPTY) {
             return;
         }
 
         // otherwise, since the cell is empty, we check
         // all 8 neighbors for more empty cells
         this.getNeighbors(x, y).forEach(neighbor => {
-            this.reveal(neighbor, nextDisplayState);
+            this.reveal(neighbor, nextState);
         });
     }
 
@@ -419,21 +397,21 @@ class Game extends Grid {
             return;
         }
 
-        let nextDisplayState = this.displayStateCopy();
+        let nextState = this.currentState;
 
         this.getNeighbors(x, y).forEach(neighbor => {
             // this method will return early if already a hint
-            this.reveal(neighbor, nextDisplayState);
+            this.reveal(neighbor, nextState);
 
             // check if any of the immediate neighbors is a mine
             // extract the "lose" logic and call it here
-            if (nextDisplayState[neighbor.x][neighbor.y] === MINE) {
-                this.lose({ x: neighbor.x, y: neighbor.y }, nextDisplayState);
+            if (nextState[neighbor.x][neighbor.y] === MINE) {
+                this.lose({ x: neighbor.x, y: neighbor.y }, nextState);
             }
         });
 
         // update display
-        this.render(nextDisplayState);
+        this.render(nextState);
 
         // this needs to run _after_ the display is updated, as we check
         // the status of the most recent move
@@ -475,7 +453,7 @@ class Game extends Grid {
         timerRef.textContent = format(this.timeInSeconds);
     }
 
-    lose({ x, y }, nextDisplayState) {
+    lose({ x, y }, nextState) {
         this.stopTimer();
 
         // show all mines in the level
@@ -484,17 +462,17 @@ class Game extends Grid {
                 if (this.mineGrid[x][y] === MINE) {
                     // if player marked the mine with a flag, show
                     // they got that one right
-                    if (nextDisplayState[x][y] === FLAG) {
-                        nextDisplayState[x][y] = MARKED;
+                    if (nextState[x][y] === FLAG) {
+                        nextState[x][y] = MARKED;
                     } else {
-                        nextDisplayState[x][y] = MINE;
+                        nextState[x][y] = MINE;
                     }
                 }
             }
         }
 
         // highlight the one you clicked
-        nextDisplayState[x][y] = EXPLODED;
+        nextState[x][y] = EXPLODED;
 
         // show a sad face
         this.button.textContent = '😫';
@@ -502,13 +480,13 @@ class Game extends Grid {
         this.gameOver = true;
     }
 
-    // compare displayState with mineGrid; if every space in
-    // displayState is revealed except for mines, you win!
+    // compare state with mineGrid; if every space in
+    // state is revealed except for mines, you win!
     checkWinCondition() {
-        // search through displayState for unrevealed cells;
+        // search through state for unrevealed cells;
         for (let y = 0; y < this.rows; y += 1) {
             for (let x = 0; x < this.columns; x += 1) {
-                const value = this.displayState[x][y];
+                const value = this.state[x][y];
 
                 // if the cell is unrevealed, and _doesn't_ have a mine
                 // in it, then the player hasn't won yet
@@ -521,18 +499,18 @@ class Game extends Grid {
         // if you got here, you won!
         this.gameOver = true;
 
-        let nextDisplayState = this.displayStateCopy();
+        let nextState = this.currentState;
 
         // highlight all the correctly avoided mines in the level
         for (let y = 0; y < this.rows; y += 1) {
             for (let x = 0; x < this.columns; x += 1) {
                 if (this.mineGrid[x][y] === MINE) {
-                    nextDisplayState[x][y] = SUCCESS;
+                    nextState[x][y] = SUCCESS;
                 }
             }
         }
 
-        this.render(nextDisplayState);
+        this.render(nextState);
 
         this.button.textContent = '😎';
         this.flagCountDisplay.textContent = `left:0`;
