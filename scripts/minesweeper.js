@@ -11,11 +11,11 @@ const MAIN_MOUSE_BUTTON = 0;
 const SECONDARY_MOUSE_BUTTON = 2;
 
 const format = timeInSeconds => {
-    const minutes = String(Math.floor(timeInSeconds / 60));
-    const seconds = String(timeInSeconds % 60);
-    const pad = input => input.length === 1 ? `0${input}` : input;
+  const minutes = String(Math.floor(timeInSeconds / 60));
+  const seconds = String(timeInSeconds % 60);
+  const pad = input => input.length === 1 ? `0${input}` : input;
 
-    return `${pad(minutes)}:${pad(seconds)}`;
+  return `${pad(minutes)}:${pad(seconds)}`;
 };
 
 class Game extends Grid {
@@ -186,89 +186,79 @@ class Game extends Grid {
     }
 
     onTouchStart(event) {
-        event.preventDefault();
-
         if (this.gameOver) {
-            return;
+          return;
         }
 
         if (event.touches.length > 1) {
-            // user is trying to use multi-touch; cancel any game input
-            this.cancelTouch = true;
+          // user is trying to use multi-touch; cancel any game input
+          this.cancelTouch = true;
 
-            // cancel any pending game action
-            window.clearTimeout(this.touchTimeout);
+          // cancel any pending game action
+          window.clearTimeout(this.touchTimeout);
 
-            return;
+          return;
         }
 
         const tapped = {
-            x: parseInt(event.target.dataset.x, 10),
-            y: parseInt(event.target.dataset.y, 10)
+          x: parseInt(event.target.dataset.x, 10),
+          y: parseInt(event.target.dataset.y, 10)
         };
 
         this.button.textContent = '😮';
 
         this.touchStartTime = Date.now();
 
-        this.touchTimeout = window.setTimeout(event => {
-            // NOTE: these next two methods are order dependent
+        this.touchTimeout = window.setTimeout(() => {
+          // NOTE: these next two methods are order dependent
 
-            // on mobile, we want special behavior if user taps & holds on a revealed hint
-            this.revealNeighbors(tapped);
+          // on mobile, we want special behavior if user taps & holds on a revealed hint
+          this.revealNeighbors(tapped);
 
-            // this method will return early if the tapped cell is already revealed
-            this.action(tapped);
+          // this method will return early if the tapped cell is already revealed
+          this.action(tapped);
         }, 250);
     }
 
     onTouchMove(event) {
-        event.preventDefault();
+      if (this.gameOver || this.cancelTouch) {
+        return;
+      }
 
-        if (this.gameOver) {
-            return;
-        }
+      // cancel any pending game action
+      // user is probably trying to pan/scroll
+      window.clearTimeout(this.touchTimeout);
 
-        // cancel any pending game action
-        // user is probably trying to pan/scroll
-        window.clearTimeout(this.touchTimeout);
-
-        this.cancelTouch = true;
+      this.cancelTouch = true;
     };
 
     onTouchEnd(event) {
-        event.preventDefault();
+      // Player lifted their finger; allow touches with next interaction
+      if (this.cancelTouch && event.touches.length === 0) {
+        this.cancelTouch = false;
+        return;
+      }
 
-        if (this.gameOver) {
-            return;
-        }
+      if (this.gameOver || this.cancelTouch) {
+        return;
+      }
 
-        // Player lifted their finger; allow touches with next interaction
-        if (this.cancelTouch && event.touches.length === 0) {
-            this.cancelTouch = false;
-            return;
-        }
+      this.button.textContent = '😃';
 
-        if (this.cancelTouch) {
-            return;
-        }
+      const tapped = {
+        x: parseInt(event.target.dataset.x, 10),
+        y: parseInt(event.target.dataset.y, 10)
+      };
 
-        this.button.textContent = '😃';
+      // if user lifts finger before the `touchTimeout` (set in `onTouchStart`) fires,
+      // then clear it out to prevent it running
+      window.clearTimeout(this.touchTimeout);
 
-        const tapped = {
-            x: parseInt(event.target.dataset.x, 10),
-            y: parseInt(event.target.dataset.y, 10)
-        };
+      const delta = Date.now() - this.touchStartTime;
 
-        // if user lifts finger before the `touchTimeout` (set in `onTouchStart`) fires,
-        // then clear it out to prevent it running
-        window.clearTimeout(this.touchTimeout);
-
-        const delta = Date.now() - this.touchStartTime;
-
-        if (delta < 250) {
-            this.toggleFlag(tapped);
-        }
+      if (delta < 250) {
+        this.toggleFlag(tapped);
+      }
     }
 
     onMouseDown(event) {

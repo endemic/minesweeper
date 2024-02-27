@@ -3,17 +3,17 @@
     "short_name": "Minesweeper",
     "icons": [
         {
-            "src": "meta/android-chrome-192x192.png",
+            "src": "metadata/images/android-chrome-192x192.png",
             "sizes": "192x192",
             "type": "image/png"
         },
         {
-            "src": "meta/android-chrome-512x512.png",
+            "src": "metadata/images/android-chrome-512x512.png",
             "sizes": "512x512",
             "type": "image/png"
         }
     ],
-    "start_url": "https://ganbarugames.com/minesweeper",
+    "start_url": "/minesweeper/",
     "theme_color": "#dddddd",
     "background_color": "#dddddd",
     "display": "standalone"
