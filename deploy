@@ -1,0 +1,4 @@
+#!/usr/bin/env bash
+
+# archive, verbose, don't sync deploy script, use ssh remote shell
+rsync -av --exclude 'deploy' --exclude '.*' --exclude '*.acorn' -e ssh ./ ganbaru.games:/var/www/ganbaru.games/html/minesweeper/
