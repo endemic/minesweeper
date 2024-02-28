@@ -127,7 +127,7 @@ class Game extends Grid {
                 }
 
                 // Find the number of mines contained in neighboring cells
-                let hintValue = this.getNeighbors(x, y).filter(({ x, y }) => this.mineGrid[x][y] === MINE).length;
+                let hintValue = this.getNeighbors({ x, y }).filter(({ x, y }) => this.mineGrid[x][y] === MINE).length;
                 // convert the number to a string value
                 let hintString = ['empty', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine'];
 
@@ -168,7 +168,7 @@ class Game extends Grid {
         }
     }
 
-    getNeighbors(x, y) {
+    getNeighbors({ x, y }) {
         return [
             // previous row
             { x: x - 1, y: y - 1 },
@@ -197,6 +197,8 @@ class Game extends Grid {
           // cancel any pending game action
           window.clearTimeout(this.touchTimeout);
 
+          this.button.textContent = '😃';
+
           return;
         }
 
@@ -220,7 +222,7 @@ class Game extends Grid {
         }, 250);
     }
 
-    onTouchMove(event) {
+    onTouchMove(_event) {
       if (this.gameOver || this.cancelTouch) {
         return;
       }
@@ -243,6 +245,8 @@ class Game extends Grid {
         return;
       }
 
+      event.preventDefault();
+
       this.button.textContent = '😃';
 
       const tapped = {
@@ -256,6 +260,7 @@ class Game extends Grid {
 
       const delta = Date.now() - this.touchStartTime;
 
+      // this short time duration indicates a quick tap, as opposed to tap & hold
       if (delta < 250) {
         this.toggleFlag(tapped);
       }
@@ -368,7 +373,7 @@ class Game extends Grid {
 
         // otherwise, since the cell is empty, we check
         // all 8 neighbors for more empty cells
-        this.getNeighbors(x, y).forEach(neighbor => {
+        this.getNeighbors({ x, y }).forEach(neighbor => {
             this.reveal(neighbor, nextState);
         });
     }
@@ -383,13 +388,13 @@ class Game extends Grid {
         }
 
         // don't do anything unless cell contents are a hint
-        if (this.displayState[x][y] >= UNKNOWN) {
+        if (this.state[x][y] >= UNKNOWN) {
             return;
         }
 
         let nextState = this.currentState;
 
-        this.getNeighbors(x, y).forEach(neighbor => {
+        this.getNeighbors({ x, y }).forEach(neighbor => {
             // this method will return early if already a hint
             this.reveal(neighbor, nextState);
 
@@ -515,9 +520,9 @@ class Game extends Grid {
 
         const stringify = point => `(${point.x},${point.y})`;
 
-        console.assert(this.getNeighbors(0, 0).map(stringify).join(',') === '(1,0),(0,1),(1,1)', `getNeighbors(0,0) = ${this.getNeighbors(0, 0).map(stringify).join(',')}`);
-        console.assert(this.getNeighbors(5, 5).map(stringify).join(',') === '(4,4),(5,4),(6,4),(4,5),(6,5),(4,6),(5,6),(6,6)', `getNeighbors(5, 5) = ${this.getNeighbors(5, 5).map(stringify).join(',')}`);
-        console.assert(this.getNeighbors(9, 9).map(stringify).join(',') === '(8,8),(9,8),(8,9)', `getNeighbors(9, 9) = ${this.getNeighbors(9, 9).map(stringify).join(',')}`);
+        console.assert(this.getNeighbors({ x: 0, y: 0 }).map(stringify).join(',') === '(1,0),(0,1),(1,1)', `getNeighbors(0,0) = ${this.getNeighbors({ x: 0, y: 0 }).map(stringify).join(',')}`);
+        console.assert(this.getNeighbors({ x: 5, y: 5 }).map(stringify).join(',') === '(4,4),(5,4),(6,4),(4,5),(6,5),(4,6),(5,6),(6,6)', `getNeighbors(5, 5) = ${this.getNeighbors({ x: 5, y: 5 }).map(stringify).join(',')}`);
+        console.assert(this.getNeighbors({ x: 9, y: 9 }).map(stringify).join(',') === '(8,8),(9,8),(8,9)', `getNeighbors(9, 9) = ${this.getNeighbors({ x: 9, y: 9 }).map(stringify).join(',')}`);
 
         [this.columns, this.rows] = previousValues;
     }
