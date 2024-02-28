@@ -54,9 +54,11 @@ button#settings {
     border: 1px solid black;
     flex-basis: 100%;
     width: 100%;
+    user-select: none;
+    -webkit-user-select: none; /* u gotta be kidding me */
 }
 
-#grid>div {
+#grid > div {
     border: 1px solid black;
     border-top: 0;
     border-left: 0;
@@ -64,56 +66,25 @@ button#settings {
     image-rendering: pixelated;
 }
 
-.empty {
-    background: url('../images/empty.png') center/100% no-repeat;
-}
+.empty { background: url('../images/empty.png') center/100% no-repeat; }
+.unknown { background: url('../images/unknown.png') center/100% no-repeat; }
+.one { background: url('../images/one.png') center/100% no-repeat; }
+.two { background: url('../images/two.png') center/100% no-repeat; }
+.three { background: url('../images/three.png') center/100% no-repeat; }
+.four { background: url('../images/four.png') center/100% no-repeat; }
+.five { background: url('../images/five.png') center/100% no-repeat; }
+.six { background: url('../images/six.png') center/100% no-repeat; }
+.mine { background: url('../images/mine.png') center/100% no-repeat; }
+.flag { background: url('../images/flag.png') center/100% no-repeat; }
+.exploded { background: url('../images/mine.png') red center/100% no-repeat; }
+.marked { background: url('../images/mine.png') greenyellow center/100% no-repeat; }
+.success { background: url('../images/success.png') center/100% no-repeat; }
 
-.unknown {
-    background: url('../images/unknown.png') center/100% no-repeat;
-}
-
-.one {
-    background: url('../images/one.png') center/100% no-repeat;
-}
-
-.two {
-    background: url('../images/two.png') center/100% no-repeat;
-}
-
-.three {
-    background: url('../images/three.png') center/100% no-repeat;
-}
-
-.four {
-    background: url('../images/four.png') center/100% no-repeat;
-}
-
-.five {
-    background: url('../images/five.png') center/100% no-repeat;
-}
-
-.six {
-    background: url('../images/six.png') center/100% no-repeat;
-}
-
-.mine {
-    background: url('../images/mine.png') center/100% no-repeat;
-}
-
-.flag {
-    background: url('../images/flag.png') center/100% no-repeat;
-}
-
-.exploded {
-    background: url('../images/mine.png') red center/100% no-repeat;
-}
-
-.marked {
-    background: url('../images/mine.png') greenyellow center/100% no-repeat;
-}
-
-.success {
-    background: url('../images/success.png') center/100% no-repeat;
+/* stupid lazy old way to have the browser request
+css background images, by nesting content in an offscreen element */
+#preload {
+  position: absolute;
+  left: -9999px;
 }
 
 /* desktop styles */
